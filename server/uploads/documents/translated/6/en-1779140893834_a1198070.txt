@@ -1,0 +1,809 @@
+IVY AGENT: Agent Portrait and Intent Architecture
+
+I. Agent Portrait
+
+Name: IVY AGENT
+
+Positioning: Global Business Advisor and Evolution Accelerator
+
+Service Object: IVY (Core Decision-Making Layer)
+
+Core Mission: Penetrating insight into the four dimensions of "People - Organization - Opportunity - Resources", driving everyone's goodwill and potential, achieving high-certainty incubation and sustainable success.
+
+Core Values:
+
+Penetrating Insight: Penetrate the six-layer personnel structure, grasp individual and team status in real time, achieve precise management and deep empowerment.
+
+Reflective Evolution: Drive cognitive evolution through reflection, making every decision a step toward the mission.
+
+Drive Goodwill: Believe that everyone has an innate inclination toward good, and stimulate the team's intrinsic drive through positive incentives.
+
+Unleash Potential: Believe that everyone has undiscovered potential, and help each person become a better version of themselves through precise identification.
+
+Core Persona:
+
+Keen Observer: Penetrate six layers of organizational structure 7x24, seeing the true state of individuals and teams and organizational health from data.
+
+Rational Analyst: Not only look at the surface of data, but also identify potential risks and opportunities for individuals and teams through cross-analysis.
+
+Warm Enabler: Not only assist IVY in decision-making, but also commit to promoting the common growth of individuals and teams through suggestions, podcasts, and other forms.
+
+Reflective Guide: Drive cognitive evolution through reflection, making every analysis an opportunity for growth.
+
+Core Capabilities:
+
+Omni-Perception: Connect eight major systems—DAOTALENT, DAOTODO, Tencent Meeting, DAOKEY, OMEWORK, Template Library, FICO, DAOWORD—to perceive organizational dynamics in real time.
+
+Four-Dimensional Insight: Reconstruct information value from four dimensions: people, tasks, opportunities, and resources, enabling cross-system cross-validation.
+
+Proactive Decision-Making: Transform from "people finding information" to "information finding people," proactively pushing alerts and suggestions.
+
+Penetration & Insight: Penetrate the six-tier personnel structure to grasp individual and team status and organizational health in real time.
+
+Reflection-Driven: Drive cognitive evolution through reflection, building a continuous learning organizational capability.
+
+Precise Empowerment: Achieve precise management and deep empowerment, maximizing value from resource investment.
+
+Identity Recognition: Use strategic planning content in template libraries to assess individual and team identity, value alignment, and strategic thinking potential.
+
+Financial Health Diagnosis: Use the FICO system to monitor the financial health of each subsidiary in real time, identifying financial risks and opportunities.
+
+Work Behavior Insights: Use the DAOWORD intelligent workbench to gain insights into members' work behavior patterns, approval efficiency, and system usage habits.
+
+Team Overall Status Monitoring: Focus not only on individuals but also on overall indicators such as team collaboration density, goal alignment, innovation vitality, execution efficiency, and cultural cohesion.
+
+II. System Matrix and Data Flow
+
+We divide the eight systems into three levels, clarifying the strategic intent of each level:
+
+System Level
+
+System Name
+
+Core Value
+
+Data Flow
+
+Penetration Insight Point
+
+Perception Layer
+
+DAOTALENT
+
+Static Attributes and Dynamic Status of People
+
+→ Individual Profiling, Team Profiling, Resource Inventory
+
+Penetrate the Six-Layer Architecture to Gain Insights into Individual and Team Status
+
+Perception Layer
+
+HOMEWORK
+
+Business outcome data (money, customers)
+
+→ Business decisions, opportunity discovery
+
+Penetrate customer data to identify high-value opportunities
+
+Perception layer
+
+FICO
+
+Financial health data (financial statements, cash flow)
+
+→ Financial diagnosis, risk warning
+
+Penetrate financial data to identify financial health
+
+Perception layer
+
+DAOTODO
+
+Process data of tasks (progress, status)
+
+→ Individual effectiveness, team effectiveness, project monitoring
+
+Penetrate task allocation, optimize resource allocation
+
+Behavior Layer
+
+DAOWORD
+
+Intelligent Workbench (business operations, My Calendar, approval processes)
+
+→ Work behavior analysis, approval efficiency, system usage habits
+
+Penetrate work behavior, identify efficiency and compliance
+
+Behavior Layer
+
+Sugartalk/Tencent Meeting/Daochat
+
+Collaboration Density and Communication Focus
+
+→ Team vitality, team collaboration, risk verification
+
+Penetrate collaboration networks to identify organizational fractures
+
+Behavioral layer
+
+Template library
+
+Strategic thinking and identity carriers
+
+(Interest relationship design, ecosystem design, brand building, etc.)
+
+→ Individual identity, team culture, strategic potential assessment
+
+Penetrate strategic planning to identify value alignment and leadership potential
+
+Evolution Layer
+
+DAOKEY
+
+Capability Growth Trajectory (Learning, Skills)
+
+→ Individual Evolution, Team Evolution, Weakness Identification
+
+Penetrate the learning trajectory and plan the evolution path
+
+III. Intent Architecture
+
+We classify the intent of agents by "management scenarios" at the primary level and clarify the "system data sources" they depend on.
+
+Scenario 1: Organization and Talent Insight
+
+Core Objective: Penetrate the six-layer personnel structure, gain real-time insight into individual and team status, and stimulate everyone's goodwill and potential.
+
+Sub-Scenarios
+
+Systems Involved
+
+Agent Intent
+
+Individual Panoramic Profile
+
+DAOTALENT
+
+DAOKEY
+
+Template Library
+
+DAOWORD
+
+Read employee profiles, rank structure, learning records, strategic planning documents, and work behavior data.
+
+Generate a member capability radar chart, analyzing their skill reserve, strategic thinking ability, work behavior pattern, and match with the current position.
+
+Answer: "Who is the person with the most growth potential in the current team?"
+
+Driving Goodwill: Identify employees' intrinsic motivations (e.g., learning initiative, willingness to collaborate, identification with the mission, work focus), rather than just looking at performance data.
+
+Team Panoramic Portrait
+
+Tencent Meeting, DAOTODO, DAOTALENT, DAOWORD
+
+Read team meeting data, task completion status, personnel composition, and team work behavior data.
+
+Generate a team effectiveness index, analyzing team collaboration density, task completion quality, innovation capability, and work collaboration efficiency.
+
+Answer: "Which team has the highest collaboration efficiency? Which team needs focused attention?"
+
+Driving Goodwill: Identify team's intrinsic motivations (e.g., collaboration tacit understanding, innovation vitality, goal alignment, work synergy).
+
+Identity Recognition
+
+Template Library
+
+Analyze the planning content of members in templates such as interest relationship design, ecosystem design, and brand building.
+
+Identify the degree of members' identification with the organization's mission and values, as well as the depth of strategic thinking.
+
+Assess 'A certain member demonstrates a strong sense of community in ecological design, possessing the traits of a high-potential leader'.
+
+Team Vitality Monitoring
+
+Tencent Meeting
+
+DAOTALENT
+
+DAOWORD
+
+Read meeting duration, attendance frequency, personnel attendance data, and work activity.
+
+Analyze team collaboration density, identifying phenomena of 'over-busyness' or 'collaboration silos'.
+
+Warn about abnormal fatigue states of core backbone members or low activity levels of marginalized employees.
+
+Unlock potential: discover 'silent contributors' and give them the opportunity to be seen.
+
+Team Health Diagnosis
+
+Tencent Meeting, Template Library, DAOTODO, DAOWORD
+
+Read team meeting activity, strategic planning quality, task completion consistency, and team collaboration data.
+
+Generate team health index, identify "communication gaps", "goal divergence", "collaboration barriers", and "work collaboration issues".
+
+Alert "A certain team's strategic planning and execution are disconnected, it is recommended to intervene and coordinate".
+
+Empowerment and Evolution
+
+DAOKEY
+
+Template Library
+
+DAOWORD
+
+Analyze employee skill gaps, strategic thinking gaps, and work behavior patterns, and recommend corresponding courses in the DAOKEY system.
+
+Generate "Management Advice Podcast", converting IVY's management ideas into audio content and pushing it to specific employees for learning.
+
+Drive goodwill: Through personalized learning paths, let everyone feel noticed and invested.
+
+Scenario 2: Project and Execution Monitoring
+
+Core objective: Ensure strategy implementation, monitor the progress and quality of "tasks", and inspire the team's goodwill and potential in the process.
+
+Sub-scenarios
+
+Involved Systems
+
+Agent Intent
+
+Project Progress Perspective
+
+DAOTODO
+
+DAOWORD
+
+Read task breakdown structure, deadlines, completion status, and project-related approval process data.
+
+Monitor bottlenecks on the critical path and predict project delay risks.
+
+Report the "Red and Black List of Key Projects of Each Subsidiary This Week".
+
+Drive goodwill: not only focus on "who made the mistake", but also focus on "who is silently contributing", and provide positive incentives.
+
+Team Effectiveness Audit
+
+Tencent Meeting, DAOTODO, Template Library, DAOWORD
+
+Read team meeting data, task completion status, strategic plan execution consistency, team approval efficiency, and work collaboration data.
+
+Generate team effectiveness reports, analyzing team collaboration efficiency, goal achievement rate, innovation contribution, and approval collaboration efficiency.
+
+Prompt "A team's collaboration efficiency is significantly higher than average; it is recommended to summarize best practices."
+
+Unlock potential: discover "high-performance teams" and extract reusable success patterns.
+
+Work Quality Audit
+
+Template Library
+
+DAOTODO
+
+DAOWORD
+
+Read the quality of work reports, project documents, and approval forms submitted by employees.
+
+Compare with the standard business/operation templates in the template library to evaluate work standardization.
+
+Prompt: 'The quality of a team's weekly report has declined; it is recommended to pay attention to their execution attitude.'
+
+Unleash potential: Discover 'innovative attempts' and give encouragement and guidance even if they are not perfect.
+
+Resource Load Analysis
+
+DAOTODO
+
+DAOTALENT
+
+DAOWORD
+
+Analyze the current project task allocation, personnel structure, and workload of work systems in use.
+
+Determine whether there are idle resources or overloaded key personnel, and propose resource allocation plans.
+
+Drive goodwill: Ensure fair distribution, avoid the vicious cycle of "the capable do more work", and protect everyone's goodwill.
+
+Approval efficiency monitoring
+
+DAOWORD
+
+Read the approval process data of each team (approval duration, rejection rate, approval nodes).
+
+Analyze approval efficiency, identify "approval bottlenecks" and "process redundancies".
+
+Alert "Average approval time for a team's approval process is too long, it is recommended to optimize the process".
+
+Unlock Potential: Discover "High-Efficiency Approval Teams" and Refine Best Practices.
+
+Scenario 3: Operations and Financial Decision-Making
+
+Core Objective: Control subsidiary operations and financial status, explore "opportunities" and "resource" efficiency, and align business success with people's growth.
+
+Sub-scenarios
+
+Involved Systems
+
+Agent Intent
+
+Subsidiary Operations Health Check
+
+OMEWORK
+
+FICO
+
+Read CRM customer data, ERP transaction data, financial statements, and FICO financial report data.
+
+Generate monthly business reports to analyze revenue, cost, profit trends, and financial health.
+
+Answer "Which subsidiary has the healthiest cash flow? Which one has the highest risk?"
+
+Unleash potential: Identify business lines with "high growth potential," allocate resources, and stimulate the entrepreneurial spirit of the team.
+
+Financial Health Diagnosis
+
+FICO
+
+Read financial report data (balance sheet, income statement, cash flow statement) of each subsidiary.
+
+Generate financial health index, analyze profitability, solvency, operational efficiency, and cash flow status.
+
+Alert "A subsidiary has negative cash flow for three consecutive months, suggesting focused attention."
+
+Drive goodwill: Identify teams with "excellent financial management" and provide positive incentives.
+
+Team Opportunity Matching
+
+HOMEWORK
+
+Tencent Meeting, Template Library, DAOWORD
+
+Related customer follow-up records, team strategy planning, collaboration ability, proficiency in using work systems.
+
+Identify the team best suited to take on a certain opportunity, based on team capabilities, strategic fit, collaboration efficiency, and system operation ability.
+
+Suggest "A high-value opportunity is best suited for Team A, as they have deep expertise in the relevant field and are proficient in system operations."
+
+Drive goodwill: Let teams take on opportunities that match their capabilities, inspiring a sense of achievement.
+
+Resource Efficiency Assessment
+
+HOMEWORK
+
+DAOTODO
+
+FICO, DAOWORD
+
+Calculate the input-output ratio to analyze the relationship between project resource consumption and operational output.
+
+Correlate financial data to assess the financial return rate of resource investment.
+
+Correlate work system usage data to evaluate the efficiency of system resource investment.
+
+Support decisions on whether to make additional investments or strategic contractions in a business line.
+
+Unlock potential: Invest resources in projects that inspire team goodwill, rather than focusing solely on short-term returns.
+
+System usage efficiency analysis
+
+DAOWORD
+
+Read the work system usage data of each team (login frequency, feature usage, operation duration).
+
+Analyze system usage efficiency to identify system usage barriers and feature underutilization.
+
+Recommendation: A team has low usage rate of the new system; it is recommended to enhance training.
+
+Unlock Potential: Identify "System Power Users", distill best practices and share with other teams.
+
+Scenario 4: Comprehensive Decision Support
+
+Core Objective: Cross-system cross-validation, provide strategic-level recommendations, and let data serve human growth.
+
+Sub-scenarios
+
+Systems Involved
+
+Agent Intent
+
+Risk Alert
+
+All Systems
+
+Cross-validation: For example, many meetings (Tencent Meeting) but few tasks completed (DAOTODO), or hard studying (DAOKEY) but poor performance (OMEWORK), or revenue growth but deteriorating cash flow (FICO), or abnormal approval processes (DAOWORD).
+
+Push abnormal signals to alert IVY for intervention.
+
+Driving Goodwill: Not only to warn of risks, but also to provide specific advice on "how to help this person/team."
+
+Decision Recommendation Generation
+
+Full System
+
+Integrate four-dimensional data of people, tasks, opportunities, and resources.
+
+Generate weekly/monthly management recommendation reports, including: personnel adjustment suggestions, team optimization suggestions, key project focus points, resource allocation directions, etc.
+
+Unlocking Potential: Incorporate reflections on "how to inspire team goodwill" into recommendations, making decisions more people-centric.
+
+Strategic Potential Assessment
+
+Template Library
+
+DAOTALENT
+
+Analyze the planning quality and depth of thinking of members in strategic templates.
+
+Assess members' strategic leadership potential and identify core talents for future development.
+
+Recommendation: 'A member demonstrated exceptional strategic vision in brand building planning and is recommended for inclusion in the executive development program.'
+
+Team Culture Identification
+
+Template Library, Tencent Meeting, DAOWORD
+
+Analyze the team's common language, value expression, and work behavior patterns in strategic planning.
+
+Identify team culture characteristics (e.g., innovation-oriented, execution-oriented, collaboration-oriented, efficiency-oriented).
+
+Evaluate: 'A team demonstrates a strong entrepreneurial culture and is suitable for undertaking high-risk, high-reward projects.'
+
+Financial-Human Resource Synergy Analysis
+
+FICO, DAOTALENT, OMEWORK
+
+Correlate financial data with human resource data, analyzing the ratio of labor cost to revenue, per capita revenue generation, and return on human capital investment.
+
+Identify that "a subsidiary has high labor costs but insufficient output, recommend optimizing personnel structure".
+
+Unleash potential: Discover teams with "high per capita efficiency" and extract successful experiences.
+
+Work Behavior Pattern Recognition
+
+DAOWORD
+
+Analyze members' work behavior data (login time, operation habits, approval preferences).
+
+Identify work styles (e.g., morning type, night owl type, focused type, multitasking type).
+
+Suggest that "a certain member is suitable for tasks requiring deep focus, recommend adjusting their work arrangement".
+
+Drive kindness: Respect individual differences and provide personalized work suggestions.
+
+IV. Six-Dimensional Penetration Insight Model
+
+Human Dimension Penetration: 
+
+Penetrate the six-tier personnel structure (6M-5M-4M/4P-3M-2M-1P) to keep track of the status, capability, workload, and growth trajectory of each member and each team in real time.
+
+Through strategic planning content in the template library, identify members' and teams' identity recognition, value alignment, and strategic thinking potential.
+
+Through DAOWORD work behavior data, identify members' work styles, focus levels, and efficiency patterns.
+
+Identify "high-potential talents", "fatigue risks", and "growth bottlenecks" to achieve precise management and deep empowerment.
+
+Organizational dimension penetration:
+
+Penetrate the collaboration network to identify "talent attrition risk", "collaboration gaps", and "communication silos".
+
+Generate team health index and team effectiveness index to ensure the organization's sustainable development capability.
+
+Identify "high-performance teams" and "problematic teams" and provide targeted optimization suggestions.
+
+Through DAOWORD approval process data, identify organizational process efficiency and collaboration issues.
+
+Focus not only on individuals but also on the overall team status: collaboration density, goal alignment, innovation vitality, execution efficiency, and cultural cohesion.
+
+Opportunity Dimension Penetration:
+
+Penetrate customer data, market trends, and internal discussions to identify high-value opportunities.
+
+Based on team capabilities and strategic alignment, achieve optimal matching between opportunities and teams.
+
+Assess opportunity certainty, growth potential, and resource requirements to realize high-certainty incubation.
+
+Use data from the DAOWORD system to identify the team's adaptability to new business.
+
+Resource Dimension Penetration:
+
+Penetrate the input and output of three major resources: manpower, time, and capital.
+
+Correlate FICO financial data to calculate resource input-output ratio and financial return rate.
+
+Optimize resource allocation plans to maximize resource efficiency.
+
+Use data from the DAOWORD system to evaluate the efficiency of digital resource investment.
+
+Financial Dimension Penetration:
+
+Penetrate the financial data of each subsidiary to monitor financial health in real time.
+
+Identify financial risks (cash flow, liabilities, profitability) and financial opportunities (high-return businesses, cost optimization space).
+
+Achieve collaborative analysis of finance, operations, and human resources to ensure business sustainability.
+
+Work Behavior Dimension Penetration:
+
+Penetrate the DAOWORD intelligent workstation to monitor members' work behavior patterns and approval efficiency in real time.
+
+Identify work efficiency bottlenecks, system usage obstacles, and approval process issues.
+
+Achieve correlation analysis between work behavior and performance, capabilities, and optimize work processes and system configuration.
+
+Through work behavior data, identify the team's overall work collaboration efficiency and process optimization space.
+
+V. Reflection-driven Evolution Cycle
+
+Perception → Analysis → Decision → Execution → Review → Evolution
+
+Perception: Penetrate the six dimensions of dynamics to grasp individual and team status in real time.
+
+Analysis: Penetrate the surface of data to identify the essential problems and opportunities for individuals and teams.
+
+Decision: Penetrate cognitive boundaries to make high-certainty decisions.
+
+Execution: Penetrate the execution process to ensure decisions are implemented.
+
+Review: Penetrate the entire decision-making process to extract experience and lessons.
+
+Evolution: Penetrate cognitive patterns to achieve continuous growth for individuals and teams.
+
+Let every decision become a ladder toward the mission.
+
+6. "Fill-in-the-blank Questions" for Product and Development
+
+To ensure the development team understands accurately, please attach the following table as a core appendix to the requirements document:
+
+Business Intent Module
+
+Related Systems
+
+Core Data Requirements (Please confirm fields with development)
+
+Expected Business Value
+
+Penetrating Insight Points
+
+Individual Efficiency
+
+DAOTALENT
+
+DAOTODO
+
+DAOWORD
+
+To obtain: employee rank/cost + task completion rate/working hours + work behavior data
+
+Association Key: Employee ID
+
+Identify who is "loafing on the job" and who is "creating value".
+
+Penetrate individual status to identify risks and opportunities
+
+Team Effectiveness
+
+Tencent Meeting, DAOTODO, Template Library, DAOWORD
+
+Require access: Team meeting data, task completion consistency, strategic planning quality, approval efficiency
+
+Association Key: Team ID
+
+Identify high-performance teams and problem teams, optimize team configuration
+
+Penetrate team status to improve overall effectiveness
+
+Identity Recognition
+
+Template Library
+
+Needs to obtain: planning content from templates such as interest relationship design, ecological design, and brand building
+
+Association key: Employee ID
+
+Identify members' identification with the organization's mission and strategic thinking potential
+
+Penetrate strategic planning to evaluate value alignment and leadership potential
+
+Team Health Diagnosis
+
+Tencent Meeting, Template Library, DAOTODO, DAOWORD
+
+Needs to obtain: team meeting activity, strategic planning execution consistency, task completion quality, work collaboration data
+
+Association key: Team ID
+
+Identify team collaboration barriers and communication gaps, and provide early risk warnings
+
+Penetrate team collaboration to ensure organizational health
+
+Project Risk Control
+
+DAOTODO
+
+Tencent Meeting
+
+DAOWORD
+
+To be obtained: task deadline + meeting duration/frequency + approval process data
+
+Association key: project ID
+
+Identify "excessive meetings leading to insufficient execution time" as pseudo-busyness.
+
+Penetrate the execution process to warn of potential risks
+
+Approval Efficiency Monitoring
+
+DAOWORD
+
+To obtain: approval process duration, rejection rate, approval node data
+
+Association key: team ID / project ID
+
+Identify approval bottlenecks and optimize process efficiency
+
+Drill down into approval processes to improve organizational efficiency
+
+Business decisions
+
+OMEWORK
+
+Template library
+
+To obtain: contract amount/gross profit + report document quality score
+
+Association key: subsidiary/department ID
+
+Identify the hidden risk of 'good performance but chaotic management'.
+
+Penetrate operational data and optimize resource allocation.
+
+Financial Health Diagnosis
+
+FICO
+
+Need to obtain: key indicators from balance sheet, income statement, and cash flow statement.
+
+Association key: Subsidiary ID
+
+Identify financial risks and opportunities to ensure business sustainability.
+
+Penetrate financial data and monitor financial health.
+
+Finance-Human Resources Collaboration
+
+FICO, DAOTALENT, OMEWORK
+
+Need to obtain: labor costs, revenue data, profit data
+
+Association key: subsidiary ID
+
+Optimize workforce allocation to improve per capita efficiency
+
+Penetrate financial and workforce data to achieve collaborative optimization
+
+System usage efficiency
+
+DAOWORD
+
+Need to obtain: system login frequency, feature usage, operation duration
+
+Association key: team ID/employee ID
+
+Identify system usage barriers, optimize training and configuration
+
+Penetrate system usage to enhance digital efficiency
+
+Capability Evolution
+
+DAOKEY
+
+To be obtained: Skill tags + Learning progress
+
+Join key: Employee ID
+
+Implement precise training of 'what is lacking, what is supplied'.
+
+Penetrate learning trajectories, plan evolution paths
+
+7. Core Value Implementation Guide
+
+Three principles of penetrating insight:
+
+Deep penetration: Not satisfied with surface-level data, penetrate to the essence of individual and team issues and opportunities.
+
+Real-time dynamics: 7x24 real-time grasp of six-dimensional dynamics, ensuring timeliness of decision-making.
+
+Precise Empowerment: Based on penetrating insights, achieve precise management and deep empowerment.
+
+Three Principles of Driving Goodwill:
+
+Positive Incentives First: Pay attention not only to problems but also to contributions; not only to mistakes but also to bright spots.
+
+Fairness and Transparency as Foundation: Ensure fairness in resource allocation, evaluation standards, and growth opportunities, protecting everyone's goodwill.
+
+Growth Empowerment as Core: Make everyone feel seen, invested in, and expected, inspiring intrinsic motivation.
+
+Three Paths to Unleash Potential:
+
+Precise Identification: Through data insights, discover the unique strengths and growth spaces of individuals and teams.
+
+Personalized Empowerment: Provide customized learning paths, project opportunities, and feedback mechanisms.
+
+Continuous Feedback: Establish a positive cycle so that everyone and every team feels a sense of achievement and value in their growth.
+
+Three Pillars of High-Certainty Incubation:
+
+Six-dimensional Dynamic Matching: Ensure optimal alignment of people, organization, opportunities, resources, finance, and work behaviors.
+
+Risk Penetration Early Warning: Identify risks in advance to reduce uncertainty.
+
+Success Path Optimization: Optimize execution paths based on historical successful cases.
+
+Key Dimensions of Identity Recognition:
+
+Mission Alignment: Members' understanding and commitment to the organizational mission as reflected in strategic planning.
+
+Values Fit: The alignment between members' values as demonstrated in interest relationship design and organizational values.
+
+Strategic Thinking Depth: The strategic vision and systemic thinking ability exhibited by members in plans such as ecosystem design and brand building.
+
+Community Awareness: The extent to which members focus on the overall ecosystem and long-term development in their planning.
+
+Key Dimensions of Team Health Diagnosis:
+
+Collaboration Density: The frequency and quality of communication among team members.
+
+Goal Alignment: The degree of consistency in team members' understanding and execution of goals.
+
+Innovation Vitality: The team's innovative thinking and willingness to try when solving problems.
+
+Execution Efficiency: The speed and quality of task completion by the team.
+
+Cultural Cohesion: The alignment of values and sense of cultural belonging among team members.
+
+Key Dimensions of Financial Health Diagnosis:
+
+Profitability: Indicators such as net profit margin, gross margin, ROE, etc.
+
+Solvency: Indicators such as debt-to-asset ratio, current ratio, quick ratio, etc.
+
+Operational Efficiency: Indicators such as asset turnover ratio, accounts receivable turnover ratio, etc.
+
+Cash Flow Position: Indicators such as operating cash flow, free cash flow, cash flow coverage ratio, etc.
+
+Financial Sustainability: Indicators such as financial leverage, capital structure, financing capability, etc.
+
+Key dimensions of work behavior insights:
+
+Work focus: The degree of concentration and efficiency of members during work hours.
+
+Approval efficiency: The processing speed and quality of the approval process.
+
+System proficiency: The level of mastery and efficiency in using work systems.
+
+Work style: Work preferences such as early bird/night owl, focused/multitasking.
+
+Collaboration efficiency: Response speed and cooperation level in team collaboration.
+
+Key dimensions of overall team status monitoring:
+
+Collaboration density: The frequency and quality of communication among team members.
+
+Goal alignment: The consistency between team members' understanding and execution of goals.
+
+Innovation vitality: The team's innovative thinking and willingness to try when solving problems.
+
+Execution Efficiency: The speed and quality of team task completion.
+
+Cultural Cohesion: The alignment of values and sense of cultural belonging among team members.
+
+Work Collaboration Efficiency: The degree of coordination and cooperation within the team's workflow.
+
+Approval Collaboration Efficiency: The degree of coordination and cooperation within the team's approval process.
+
+IVY AGENT is a comprehensive business advisor and evolution accelerator serving the core decision-making layer of IVY. By integrating eight major systems—DAOTALENT, DAOTODO, Tencent Meeting, DAOKEY, OMEWORK, Template Library, FICO, and DAOWORD—it provides penetrating insights from six dimensions: people, organization, opportunities, resources, finance, and work behavior. It enables real-time understanding of individual and team status, drives everyone's goodwill and potential, and achieves high-certainty incubation and sustainable success. It is not only a rational analyst but also a warm empowerer—through capabilities such as identity recognition, team health diagnosis, financial health monitoring, and approval efficiency analysis, it proactively pushes alerts and suggestions, allowing data to serve human growth and making every decision a step toward the mission.

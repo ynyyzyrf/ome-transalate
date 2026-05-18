@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1776139091780,
+      "tag": "0000_chunky_black_bolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1776139262036,
+      "tag": "0001_many_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777009133107,
+      "tag": "0002_serious_chimera",
+      "breakpoints": true
+    }
+  ]
+}

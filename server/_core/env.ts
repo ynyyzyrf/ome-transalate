@@ -1,0 +1,126 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  // Database
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+
+  // LLM Provider (default)
+  LLM_PROVIDER: z.enum(["openai", "anthropic", "deepseek"]).default("openai"),
+  LLM_MODEL: z.string().default("gpt-4o"),
+
+  // Per-task LLM routing (optional overrides for each task type)
+  LLM_TRANSLATE_PROVIDER: z.enum(["openai", "anthropic", "deepseek"]).optional(),
+  LLM_TRANSLATE_MODEL: z.string().optional(),
+  LLM_EXPLAIN_PROVIDER: z.enum(["openai", "anthropic", "deepseek"]).optional(),
+  LLM_EXPLAIN_MODEL: z.string().optional(),
+
+  // API Keys (conditional by provider)
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
+
+  // JWT
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+
+  // OIDC SSO (optional — for internal SSO login)
+  OIDC_ISSUER_URL: z.string().optional(),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  OIDC_JWKS_URL: z.string().optional(),
+
+  // Server
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  FRONTEND_URL: z.string().optional(),
+
+  // AWS/S3 (optional, for file storage)
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_REGION: z.string().optional(),
+  AWS_S3_BUCKET: z.string().optional(),
+
+  // Legacy Manus/Forge (optional)
+  BUILT_IN_FORGE_API_URL: z.string().optional(),
+  BUILT_IN_FORGE_API_KEY: z.string().optional(),
+
+  // Legacy OAuth (optional)
+  OAUTH_SERVER_URL: z.string().optional(),
+  VITE_APP_ID: z.string().optional(),
+  OWNER_OPEN_ID: z.string().optional(),
+});
+
+type Env = z.infer<typeof envSchema> & {
+  isProduction: boolean;
+  isDevelopment: boolean;
+  isTest: boolean;
+  // Backward compatibility aliases
+  appId: string | undefined;
+  cookieSecret: string;
+  databaseUrl: string;
+  oAuthServerUrl: string | undefined;
+  ownerOpenId: string | undefined;
+  forgeApiUrl: string | undefined;
+  forgeApiKey: string | undefined;
+};
+
+function loadEnv(): Env {
+  const result = envSchema.safeParse({
+    DATABASE_URL: process.env.DATABASE_URL,
+    LLM_PROVIDER: process.env.LLM_PROVIDER,
+    LLM_MODEL: process.env.LLM_MODEL,
+    LLM_TRANSLATE_PROVIDER: process.env.LLM_TRANSLATE_PROVIDER,
+    LLM_TRANSLATE_MODEL: process.env.LLM_TRANSLATE_MODEL,
+    LLM_EXPLAIN_PROVIDER: process.env.LLM_EXPLAIN_PROVIDER,
+    LLM_EXPLAIN_MODEL: process.env.LLM_EXPLAIN_MODEL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
+    JWT_SECRET: process.env.JWT_SECRET,
+    OIDC_ISSUER_URL: process.env.OIDC_ISSUER_URL,
+    OIDC_CLIENT_ID: process.env.OIDC_CLIENT_ID,
+    OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,
+    OIDC_JWKS_URL: process.env.OIDC_JWKS_URL,
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION,
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+    BUILT_IN_FORGE_API_URL: process.env.BUILT_IN_FORGE_API_URL,
+    BUILT_IN_FORGE_API_KEY: process.env.BUILT_IN_FORGE_API_KEY,
+    OAUTH_SERVER_URL: process.env.OAUTH_SERVER_URL,
+    VITE_APP_ID: process.env.VITE_APP_ID,
+    OWNER_OPEN_ID: process.env.OWNER_OPEN_ID,
+  });
+
+  if (!result.success) {
+    const missing = result.error.issues
+      .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
+    console.error("[Config] Invalid environment variables:\n" + missing);
+    process.exit(1);
+  }
+
+  const env = result.data;
+  const nodeEnv = env.NODE_ENV;
+
+  return {
+    ...env,
+    isProduction: nodeEnv === "production",
+    isDevelopment: nodeEnv === "development",
+    isTest: nodeEnv === "test",
+    // Backward compatibility aliases
+    appId: env.VITE_APP_ID,
+    cookieSecret: env.JWT_SECRET,
+    databaseUrl: env.DATABASE_URL,
+    oAuthServerUrl: env.OAUTH_SERVER_URL,
+    ownerOpenId: env.OWNER_OPEN_ID,
+    forgeApiUrl: env.BUILT_IN_FORGE_API_URL,
+    forgeApiKey: env.BUILT_IN_FORGE_API_KEY,
+  };
+}
+
+export const ENV = loadEnv();
