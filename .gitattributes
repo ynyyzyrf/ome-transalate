@@ -1,0 +1,4 @@
+# Keep patch files as LF — pnpm hashes patch content and CRLF on Windows
+# would cause `pnpm install --frozen-lockfile` to fail with
+# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH in the Docker build.
+patches/** -text

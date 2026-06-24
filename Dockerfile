@@ -1,11 +1,14 @@
-# ─── Stage 1: Build Client ──────────────────────────────────────────────────
 FROM node:20-alpine AS client-builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
 
 COPY package.json pnpm-lock.yaml ./
 COPY patches/ ./patches/
+# Normalize patch file line endings to LF. pnpm hashes the patch content and
+# CRLF (which can sneak in when the working copy is on Windows) will break
+# `--frozen-lockfile` even if `.gitattributes` is configured.
+RUN sed -i 's/\r$//' patches/*.patch
 RUN pnpm install --frozen-lockfile
 
 COPY client/ client/
@@ -14,14 +17,14 @@ COPY tsconfig.json vite.config.ts components.json ./
 
 RUN pnpm vite build
 
-# ─── Stage 2: Build Server ──────────────────────────────────────────────────
 FROM node:20-alpine AS server-builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
 
 COPY package.json pnpm-lock.yaml ./
 COPY patches/ ./patches/
+RUN sed -i 's/\r$//' patches/*.patch
 RUN pnpm install --frozen-lockfile
 
 COPY server/ server/
@@ -36,17 +39,15 @@ RUN npx esbuild server/_core/index.ts \
     --format=esm \
     --outdir=dist
 
-# ─── Stage 3: Production Runtime ────────────────────────────────────────────
+# Keep only runtime dependencies so the final image does not need a second install step.
+RUN pnpm prune --prod
+
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 COPY package.json pnpm-lock.yaml ./
-COPY patches/ ./patches/
-RUN pnpm install --frozen-lockfile --prod
+COPY --from=server-builder /app/node_modules/ ./node_modules/
 
-# Copy built artifacts
 COPY --from=server-builder /app/dist/ ./dist/
 COPY --from=client-builder /app/dist/public/ ./dist/public/
 COPY drizzle/ ./drizzle/
