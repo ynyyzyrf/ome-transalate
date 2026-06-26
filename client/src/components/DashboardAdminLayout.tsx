@@ -118,20 +118,20 @@ export default function DashboardAdminLayout({ children }: Props) {
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isActive = location === href || (href !== "/dashboard" && location.startsWith(href));
             return (
-              <Link key={href} href={href}>
-                <a
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {label}
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
-                </a>
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+                {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
               </Link>
             );
           })}
@@ -141,11 +141,11 @@ export default function DashboardAdminLayout({ children }: Props) {
         <div className="border-t border-border p-4 shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold">
-              {(admin?.displayName ?? admin?.username ?? "A")[0].toUpperCase()}
+              {((admin?.displayName || admin?.username || "A")[0] || "A").toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {admin?.displayName ?? admin?.username}
+                {admin?.displayName || admin?.username || "管理員"}
               </p>
               <p className="text-xs text-muted-foreground">管理員</p>
             </div>
