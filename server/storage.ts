@@ -1,14 +1,20 @@
 // Storage helpers: local filesystem in dev, cloud proxy in production/test.
 
-import { createWriteStream } from "node:fs";
-import { mkdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, createWriteStream } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { ENV } from "./_core/env";
 
-// ─── Cloud storage (Forge proxy) ─────────────────────────────────────────
-
 type StorageConfig = { baseUrl: string; apiKey: string };
+
+type LocalStorageModeOptions = {
+  forgeApiUrl?: string;
+  forgeApiKey?: string;
+  isDevelopment: boolean;
+  uploadsDir?: string;
+};
+
+const LOCAL_UPLOADS_DIR = ENV.UPLOADS_DIR || join(process.cwd(), "server", "uploads");
 
 function getStorageConfig(): StorageConfig {
   const baseUrl = ENV.forgeApiUrl;
@@ -21,29 +27,6 @@ function getStorageConfig(): StorageConfig {
   }
 
   return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
 }
 
 function ensureTrailingSlash(value: string): string {
@@ -62,6 +45,16 @@ function appendHashSuffix(relKey: string): string {
   return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
+function buildUploadUrl(baseUrl: string, relKey: string): URL {
+  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
+  url.searchParams.set("path", normalizeKey(relKey));
+  return url;
+}
+
+function buildAuthHeaders(apiKey: string): HeadersInit {
+  return { Authorization: `Bearer ${apiKey}` };
+}
+
 function toFormData(
   data: Buffer | Uint8Array | string,
   contentType: string,
@@ -76,8 +69,18 @@ function toFormData(
   return form;
 }
 
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
+async function buildDownloadUrl(
+  baseUrl: string,
+  relKey: string,
+  apiKey: string
+): Promise<string> {
+  const downloadApiUrl = new URL("v1/storage/downloadUrl", ensureTrailingSlash(baseUrl));
+  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
+  const response = await fetch(downloadApiUrl, {
+    method: "GET",
+    headers: buildAuthHeaders(apiKey),
+  });
+  return (await response.json()).url;
 }
 
 async function cloudPut(
@@ -101,6 +104,7 @@ async function cloudPut(
       `Storage upload failed (${response.status} ${response.statusText}): ${message}`
     );
   }
+
   const url = (await response.json()).url;
   return { key, url };
 }
@@ -114,21 +118,9 @@ async function cloudGet(relKey: string): Promise<{ key: string; url: string }> {
   };
 }
 
-// ─── Local storage (development) ─────────────────────────────────────────
-
-const LOCAL_UPLOADS_DIR = join(process.cwd(), "server", "uploads");
-
-async function ensureLocalDir(subDir: string): Promise<string> {
-  const dir = join(LOCAL_UPLOADS_DIR, subDir);
-  if (!existsSync(dir)) {
-    await mkdir(dir, { recursive: true });
-  }
-  return dir;
-}
-
 async function localPut(
   relKey: string,
-  data: Buffer | Uint8Array | string,
+  data: Buffer | Uint8Array | string
 ): Promise<{ key: string; url: string }> {
   const key = appendHashSuffix(normalizeKey(relKey));
   const filePath = join(LOCAL_UPLOADS_DIR, key);
@@ -137,21 +129,25 @@ async function localPut(
     await mkdir(dir, { recursive: true });
   }
 
-  const buffer = typeof data === "string" ? Buffer.from(data, "utf-8") :
-    data instanceof Uint8Array ? Buffer.from(data) : data;
+  const buffer =
+    typeof data === "string"
+      ? Buffer.from(data, "utf-8")
+      : data instanceof Uint8Array
+        ? Buffer.from(data)
+        : data;
+
   const writeStream = createWriteStream(filePath);
   await new Promise<void>((resolve, reject) => {
-    writeStream.write(buffer, (err) => {
-      if (err) reject(err);
-      else {
-        writeStream.end(() => resolve());
+    writeStream.write(buffer, err => {
+      if (err) {
+        reject(err);
+        return;
       }
+      writeStream.end(() => resolve());
     });
   });
 
-  // Local URL served via Express static middleware
-  const url = `/uploads/${key}`;
-  return { key, url };
+  return { key, url: `/uploads/${key}` };
 }
 
 async function localGet(relKey: string): Promise<{ key: string; url: string }> {
@@ -159,17 +155,21 @@ async function localGet(relKey: string): Promise<{ key: string; url: string }> {
   return { key, url: `/uploads/${key}` };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────
+export function resolveLocalStorageMode(options: LocalStorageModeOptions): boolean {
+  // Priority: explicit cloud config takes precedence
+  if (options.forgeApiUrl && options.forgeApiKey) return false;
+  // Without cloud config, prefer local storage in all environments
+  // This allows production deployments to work without external storage services
+  return true;
+}
 
-/**
- * Whether to use local filesystem storage (development) or cloud.
- * Cloud is used when Forge credentials are configured, regardless of env.
- * Local is used in development when no cloud credentials are set.
- */
 function useLocalStorage(): boolean {
-  if (ENV.forgeApiUrl && ENV.forgeApiKey) return false; // Cloud configured → use it
-  if (ENV.isDevelopment) return true;                   // Dev without cloud → local
-  return false;                                         // Production must have cloud
+  return resolveLocalStorageMode({
+    forgeApiUrl: ENV.forgeApiUrl,
+    forgeApiKey: ENV.forgeApiKey,
+    isDevelopment: ENV.isDevelopment,
+    uploadsDir: ENV.UPLOADS_DIR,
+  });
 }
 
 export async function storagePut(
@@ -183,16 +183,13 @@ export async function storagePut(
   return cloudPut(relKey, data, contentType);
 }
 
-export async function storageGet(
-  relKey: string,
-): Promise<{ key: string; url: string }> {
+export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   if (useLocalStorage()) {
     return localGet(relKey);
   }
   return cloudGet(relKey);
 }
 
-/** Returns the local uploads directory path (for Express static middleware). */
 export function getLocalUploadsDir(): string {
   return LOCAL_UPLOADS_DIR;
 }
