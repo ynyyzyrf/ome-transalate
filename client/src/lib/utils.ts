@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const SUPPORTED_LANGUAGES = [
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "th", label: "ภาษาไทย", flag: "🇹🇭" },
-  { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
-  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "en", label: "English", zhLabel: "英文", flag: "🇬🇧" },
+  { code: "es", label: "Español", zhLabel: "西班牙文", flag: "🇪🇸" },
+  { code: "th", label: "ภาษาไทย", zhLabel: "泰文", flag: "🇹🇭" },
+  { code: "hi", label: "हिन्दी", zhLabel: "印地文", flag: "🇮🇳" },
+  { code: "vi", label: "Tiếng Việt", zhLabel: "越南文", flag: "🇻🇳" },
 ] as const;
 
 export const LANGUAGE_MAP: Record<string, string> = {
@@ -20,13 +20,6 @@ export const LANGUAGE_MAP: Record<string, string> = {
   th: "ภาษาไทย",
   hi: "हिन्दी",
   vi: "Tiếng Việt",
-};
-
-export const STATUS_LABELS: Record<string, string> = {
-  pending: "待處理",
-  processing: "翻譯中",
-  completed: "已完成",
-  failed: "失敗",
 };
 
 export const STATUS_CLASSES: Record<string, string> = {
@@ -42,8 +35,8 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleString("zh-TW", {
+export function formatDate(date: Date | string, locale?: string): string {
+  return new Date(date).toLocaleString(locale === "en" ? "en-US" : "zh-TW", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

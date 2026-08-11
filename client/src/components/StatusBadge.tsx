@@ -1,5 +1,6 @@
-import { cn, STATUS_CLASSES, STATUS_LABELS } from "@/lib/utils";
+import { cn, STATUS_CLASSES } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { useT } from "@/i18n";
 
 interface StatusBadgeProps {
   status: "pending" | "processing" | "completed" | "failed";
@@ -7,6 +8,13 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const t = useT();
+  const labelMap: Record<string, string> = {
+    pending: t("common.statusPending"),
+    processing: t("common.statusProcessing"),
+    completed: t("common.statusCompleted"),
+    failed: t("common.statusFailed"),
+  };
   return (
     <span
       className={cn(
@@ -16,7 +24,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       )}
     >
       {status === "processing" && <Loader2 className="w-3 h-3 animate-spin" />}
-      {STATUS_LABELS[status] || status}
+      {labelMap[status] || status}
     </span>
   );
 }

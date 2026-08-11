@@ -7,6 +7,9 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/UserMenu";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useT } from "@/i18n";
 import {
   BookOpen,
   MessageSquare,
@@ -22,13 +25,6 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "總覽", icon: LayoutDashboard },
-  { href: "/dashboard/courses", label: "課程管理", icon: BookOpen },
-  { href: "/dashboard/feedbacks", label: "反饋處理", icon: MessageSquare },
-  { href: "/dashboard/glossary", label: "術語庫管理", icon: BookMarked },
-];
-
 interface Props {
   children: React.ReactNode;
 }
@@ -36,6 +32,14 @@ interface Props {
 export default function DashboardAdminLayout({ children }: Props) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const t = useT();
+
+  const NAV_ITEMS = [
+    { href: "/dashboard", label: t("dashboard.navOverview"), icon: LayoutDashboard },
+    { href: "/dashboard/courses", label: t("dashboard.navCourses"), icon: BookOpen },
+    { href: "/dashboard/feedbacks", label: t("dashboard.navFeedbacks"), icon: MessageSquare },
+    { href: "/dashboard/glossary", label: t("dashboard.navGlossary"), icon: BookMarked },
+  ];
 
   const meQuery = trpc.dashboard.me.useQuery(undefined, {
     retry: 2,
@@ -44,8 +48,8 @@ export default function DashboardAdminLayout({ children }: Props) {
 
   const logoutMutation = trpc.dashboard.logout.useMutation({
     onSuccess: () => {
-      toast.success("已登出後台");
-      window.location.href = "/dashboard/login";
+      toast.success(t("dashboard.loggedOut"));
+      window.location.href = "/login";
     },
   });
 
@@ -57,7 +61,7 @@ export default function DashboardAdminLayout({ children }: Props) {
     if (meQuery.isError && errMsg) {
       console.error("[DashboardAdmin] Auth check failed:", errMsg);
     }
-    window.location.href = "/dashboard/login";
+    window.location.href = "/login";
     return null;
   }
 
@@ -66,7 +70,7 @@ export default function DashboardAdminLayout({ children }: Props) {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">載入中...</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -96,13 +100,13 @@ export default function DashboardAdminLayout({ children }: Props) {
           <a
             href="/"
             className="flex items-center gap-3 min-w-0 group"
-            title="返回首頁"
+            title={t("common.home")}
           >
             <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0 group-hover:bg-primary/80 transition-colors">
               <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-              多語言培訓平台
+              {t("common.appName")}
             </span>
           </a>
           <button
@@ -145,9 +149,9 @@ export default function DashboardAdminLayout({ children }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {admin?.displayName || admin?.username || "管理員"}
+                {admin?.displayName || admin?.username || t("dashboard.roleAdmin")}
               </p>
-              <p className="text-xs text-muted-foreground">管理員</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.roleAdmin")}</p>
             </div>
           </div>
           <Button
@@ -158,7 +162,7 @@ export default function DashboardAdminLayout({ children }: Props) {
             disabled={logoutMutation.isPending}
           >
             <LogOut className="w-3.5 h-3.5" />
-            登出
+            {t("common.logout")}
           </Button>
           <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
             <a
@@ -166,14 +170,14 @@ export default function DashboardAdminLayout({ children }: Props) {
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-3 h-3" />
-              返回學習門戶
+              {t("dashboard.backToPortal")}
             </a>
             <a
               href="/"
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Home className="w-3 h-3" />
-              返回首頁
+              {t("dashboard.backHome")}
             </a>
           </div>
         </div>
@@ -193,11 +197,11 @@ export default function DashboardAdminLayout({ children }: Props) {
           <div className="flex items-center gap-2 text-sm">
             <a href="/" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
               <Home className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">首頁</span>
+              <span className="hidden sm:inline">{t("common.home")}</span>
             </a>
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
             <a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
-              後台管理
+              {t("dashboard.title")}
             </a>
             {location !== "/dashboard" && (
               <>
@@ -209,6 +213,8 @@ export default function DashboardAdminLayout({ children }: Props) {
             )}
           </div>
           <div className="flex-1" />
+          <LanguageSwitcher />
+          <UserMenu className="h-7 w-7" />
         </header>
 
         {/* Page content */}

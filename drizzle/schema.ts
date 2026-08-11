@@ -82,6 +82,10 @@ export const translationJobs = mysqlTable(
     targetLanguage: varchar("targetLanguage", { length: 16 }).notNull(), // en, es, th, hi, vi
     status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
     errorMessage: text("errorMessage"),
+    // Queue ownership: which worker claimed this job, when, and how many attempts.
+    workerId: varchar("workerId", { length: 64 }),
+    attempts: int("attempts").default(0).notNull(),
+    claimedAt: timestamp("claimedAt"),
     // Translated segments as JSON: [{id, text}]
     translatedSegments: json("translatedSegments").$type<TranslatedSegment[]>(),
     // S3 key for reconstructed translated document
@@ -232,7 +236,8 @@ export interface Segment {
   id: string;      // e.g. "seg-001"
   text: string;
   order: number;
-  type?: "heading" | "paragraph" | "list" | "table" | "other";
+  type?: "heading" | "paragraph" | "list" | "table" | "image" | "other";
+  meta?: Record<string, unknown>;
 }
 
 export interface TranslatedSegment {

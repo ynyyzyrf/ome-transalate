@@ -5,6 +5,7 @@
  */
 import { invokeLLM } from "./_core/llm";
 import type { Segment, TranslatedSegment } from "../drizzle/schema";
+import type { IRBlock } from "./documentIr";
 
 export const LANGUAGE_NAMES: Record<string, string> = {
   en: "English",
@@ -73,12 +74,13 @@ export async function translateSegments(
     } else {
       // Step 2: English → Target Language
       const targetInstruction = buildTargetGlossaryInstruction(glossary, langName);
-      // Convert TranslatedSegment[] back to Segment[] for step 2
-      const englishAsSegments: Segment[] = englishSegments.map((s) => ({
+      // Convert TranslatedSegment[] back to Segment[] for step 2, preserving the
+      // original block type so the model still knows headings from lists/tables.
+      const englishAsSegments: Segment[] = englishSegments.map((s, idx) => ({
         id: s.id,
         text: s.text,
         order: 0,
-        type: "paragraph",
+        type: chunk[idx].type,
       }));
       finalSegments = await translateChunk(englishAsSegments, langName, targetInstruction, "en", targetLanguage);
     }
@@ -98,19 +100,23 @@ async function translateChunk(
   targetLang: string
 ): Promise<TranslatedSegment[]> {
   const inputJson = JSON.stringify(
-    segments.map((s) => ({ id: s.id, text: s.text }))
+    segments.map((s) => ({ id: s.id, text: s.text, ...(s.type ? { type: s.type } : {}) }))
   );
 
   const sourceLangName = sourceLang === "zh" ? "Chinese" : "English";
 
-  const systemPrompt = `You are a professional enterprise training document translator. Translate ${sourceLangName} text into ${targetLangName} with high accuracy and professional terminology.${glossaryInstruction}
+  const systemPrompt = `You are a professional enterprise training document translator. Translate ${sourceLangName} training material into ${targetLangName} with high accuracy and professional terminology.${glossaryInstruction}
 
-Rules:
-1. Preserve the original meaning, tone, and structure exactly.
+Style & tone:
+1. Preserve the original meaning, tone, and structure exactly. Do not add, omit, or summarize content.
 2. For technical or professional terms, follow the glossary strictly.
-3. Return ONLY a valid JSON object with a "segments" array.
-4. Each object must have "id" (unchanged from input) and "text" (translated) fields.
-5. Do not add explanations or extra text outside the JSON.`;
+3. Headings must stay short, clear, and parallel in form. Keep numbers, codes, and identifiers exactly as-is.
+4. Lists and tables must keep their format. Do not merge list items or table cells.
+
+Output format:
+5. Return ONLY a valid JSON object with a "segments" array.
+6. Each object must have "id" (unchanged from input), "text" (translated), and "type" (unchanged from input) fields.
+7. Do not add explanations or extra text outside the JSON.`;
 
   const userPrompt = `Translate the following ${sourceLangName} training document segments to ${targetLangName}. Return a JSON object with a "segments" array:
 
@@ -141,8 +147,34 @@ ${inputJson}`;
     });
   } catch (err) {
     console.error(`[TranslationEngine] Chunk translation failed (${sourceLang}→${targetLang}):`, err);
-    return segments.map((s) => ({ id: s.id, text: s.text }));
+    throw err;
   }
+}
+
+export async function translateBlocks(
+  blocks: IRBlock[],
+  targetLanguage: string,
+  glossary: GlossaryTerm[] = [],
+  onProgress?: (completed: number, total: number) => void
+): Promise<IRBlock[]> {
+  const textBlocks = blocks.filter(
+    (b): b is IRBlock & { type: "heading" | "paragraph" | "list" | "table" } => b.type !== "image"
+  );
+  const segments: Segment[] = textBlocks.map((b, idx) => ({
+    id: b.id,
+    text: b.text || "",
+    order: Number(b.meta?.order) || idx + 1,
+    type: b.type,
+  }));
+
+  const translated = await translateSegments(segments, targetLanguage, glossary, onProgress);
+  const byId = new Map(translated.map((t) => [t.id, t.text]));
+  return blocks.map((b) => {
+    if (b.type === "image") {
+      return { ...b };
+    }
+    return { ...b, text: byId.get(b.id) ?? "" };
+  });
 }
 
 /**
@@ -188,12 +220,13 @@ export async function explainSegment(
     messages: [
       {
         role: "system",
-        content: `You are a helpful learning assistant. Your task is to explain professional training content in simple, easy-to-understand ${langName}.
-When explaining:
-1. Use simple, everyday language that anyone can understand.
-2. Break down technical terms with plain explanations.
-3. Keep the explanation concise (2-4 sentences).
-4. Respond in ${langName} only.`,
+        content: `You are a friendly learning assistant for enterprise training materials. Your job is to help a learner with limited background knowledge understand a paragraph of translated content.
+
+Style rules:
+1. Use simple, everyday ${langName} — as if explaining to a colleague who is new to the topic.
+2. Explain any technical terms or jargon in plain language.
+3. Be concise: 2-4 sentences.
+4. Respond in ${langName} only. Do not quote or restate the full original text.`,
       },
       {
         role: "user",

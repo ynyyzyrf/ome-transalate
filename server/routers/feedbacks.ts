@@ -1,28 +1,40 @@
 /**
  * Feedbacks Router
  * Handles user feedback submission, personal history, and admin management.
- * Status: 0=未接收, 1=處理中, 2=已處理
+ *
+ * Admin endpoints accept both platform admin sessions and dashboard admin sessions
+ * via a shared mixed-auth procedure (same pattern as the glossary router).
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import {
+  canManageGlossary,
+  resolvePrincipal,
+} from "../_core/authz";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import {
   createFeedback,
+  getFeedbackById,
   getFeedbacksByUser,
   listAllFeedbacks,
+  listDocuments,
   updateFeedbackStatus,
-  getFeedbackById,
 } from "../db";
 
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "管理員權限才能執行此操作" });
+/**
+ * Mixed-auth middleware that accepts either platform admins or dashboard admins.
+ * This mirrors the glossary router's approach so both the old admin path and the
+ * new dashboard path can manage feedbacks through a single set of endpoints.
+ */
+const feedbackAdminProcedure = publicProcedure.use(async ({ ctx, next }) => {
+  const principal = resolvePrincipal(ctx);
+  if (!canManageGlossary(principal)) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入" });
   }
   return next({ ctx });
 });
 
 export const feedbacksRouter = router({
-  // ── Submit feedback (authenticated users) ─────────────────────────────────
   submit: protectedProcedure
     .input(
       z.object({
@@ -40,26 +52,24 @@ export const feedbacksRouter = router({
         tutorialId: input.tutorialId,
         tutorialTitle: input.tutorialTitle,
         userId: ctx.user.id,
-        userName: ctx.user.name ?? "匿名用戶",
+        userName: ctx.user.name ?? "匿名用户",
         originalText: input.originalText,
         translatedText: input.translatedText,
         targetLanguage: input.targetLanguage,
         feedbackType: input.feedbackType,
         feedbackContent: input.feedbackContent,
-        status: 0, // 未接收
+        status: 0,
       });
       return { id, success: true };
     }),
 
-  // ── Get current user's feedbacks ───────────────────────────────────────────
   myFeedbacks: protectedProcedure
     .input(z.object({ tutorialId: z.number().optional() }))
     .query(async ({ input, ctx }) => {
       return getFeedbacksByUser(ctx.user.id, input.tutorialId);
     }),
 
-  // ── Admin: list all feedbacks with filters ─────────────────────────────────
-  adminList: adminProcedure
+  adminList: feedbackAdminProcedure
     .input(
       z.object({
         page: z.number().min(1).default(1),
@@ -77,8 +87,7 @@ export const feedbacksRouter = router({
       });
     }),
 
-  // ── Admin: update feedback status ──────────────────────────────────────────
-  updateStatus: adminProcedure
+  updateStatus: feedbackAdminProcedure
     .input(
       z.object({
         id: z.number(),
@@ -89,18 +98,26 @@ export const feedbacksRouter = router({
     .mutation(async ({ input }) => {
       const existing = await getFeedbackById(input.id);
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "反饋不存在" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "反馈不存在" });
       }
+
       await updateFeedbackStatus(input.id, input.status, input.adminNote);
       return { success: true };
     }),
 
-  // ── Admin: get single feedback detail ─────────────────────────────────────
-  getById: adminProcedure
+  getById: feedbackAdminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const fb = await getFeedbackById(input.id);
-      if (!fb) throw new TRPCError({ code: "NOT_FOUND", message: "反饋不存在" });
-      return fb;
+      const feedback = await getFeedbackById(input.id);
+      if (!feedback) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "反馈不存在" });
+      }
+
+      return feedback;
     }),
+
+  listCourses: feedbackAdminProcedure.query(async () => {
+    const result = await listDocuments(1, 200);
+    return result.items.map((d: any) => ({ id: d.id, title: d.title }));
+  }),
 });

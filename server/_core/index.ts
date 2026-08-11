@@ -2,13 +2,24 @@ import "dotenv/config";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "node:path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { closeDb, pingDb } from "../db";
+import { closeDb, countPendingTranslationJobs, pingDb } from "../db";
+import {
+  recoverStuckTranslationJobs,
+  startTranslationWorker,
+  stopTranslationWorker,
+} from "../services/translationQueue";
 import { ENV } from "./env";
-import { getLocalUploadsDir } from "../storage";
+import { getLocalUploadsDir, resolveLocalStorageMode } from "../storage";
+import {
+  getProductionStaticDir,
+  shouldExposeLocalUploads,
+  shouldServeSpaFallback,
+} from "./deployment";
 
 // ─── Port Utilities ────────────────────────────────────────────────────────
 function isPortAvailable(port: number): Promise<boolean> {
@@ -112,18 +123,28 @@ async function startServer() {
   // 4. Health check (before body parser to keep it lightweight)
   app.get("/api/health", async (_req, res) => {
     const dbOk = await pingDb();
+    const queueDepth = dbOk ? await countPendingTranslationJobs().catch(() => null) : null;
     res.status(dbOk ? 200 : 503).json({
       status: dbOk ? "ok" : "degraded",
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       checks: {
         database: dbOk ? "healthy" : "unavailable",
+        translationQueue:
+          queueDepth !== null ? `healthy (${queueDepth} pending)` : "unavailable",
       },
     });
   });
 
   // 5. Local uploads (development only — serves files from server/uploads/)
-  if (ENV.isDevelopment) {
+  const useLocalStorage = resolveLocalStorageMode({
+    forgeApiUrl: ENV.forgeApiUrl,
+    forgeApiKey: ENV.forgeApiKey,
+    isDevelopment: ENV.isDevelopment,
+    uploadsDir: ENV.UPLOADS_DIR,
+  });
+
+  if (shouldExposeLocalUploads({ isDevelopment: ENV.isDevelopment, useLocalStorage })) {
     const uploadsDir = getLocalUploadsDir();
     app.use("/uploads", express.static(uploadsDir));
     console.log(`[Server] Local uploads served from ${uploadsDir}`);
@@ -145,8 +166,27 @@ async function startServer() {
     })
   );
 
+  if (ENV.isProduction) {
+    const distPublicDir = getProductionStaticDir();
+    app.use(express.static(distPublicDir));
+    app.get("*", (req, res, next) => {
+      if (!shouldServeSpaFallback(req.path)) {
+        return next();
+      }
+      res.sendFile(path.join(distPublicDir, "index.html"));
+    });
+  }
+
   // 9. Global error handler (last)
   app.use(globalErrorHandler);
+
+  // ── Translation Queue (persistent, crash-recoverable) ─────────────────────
+  // Self-heal jobs stuck from a previous process, then start the worker that
+  // picks up "pending" translation jobs and translates them in the background.
+  await recoverStuckTranslationJobs().catch((err) => {
+    console.error("[Queue] startup recovery failed:", err);
+  });
+  startTranslationWorker();
 
   // ── Start Listening ─────────────────────────────────────────────────────────
   const preferredPort = ENV.PORT;
@@ -163,6 +203,7 @@ async function startServer() {
   // ── Graceful Shutdown ───────────────────────────────────────────────────────
   const shutdown = async (signal: string) => {
     console.log(`\n[Server] Received ${signal}, shutting down gracefully...`);
+    stopTranslationWorker();
     server.close(async () => {
       console.log("[Server] HTTP server closed");
       await closeDb();

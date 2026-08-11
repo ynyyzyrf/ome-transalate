@@ -47,6 +47,9 @@ class OAuthService {
     code: string,
     state: string
   ): Promise<ExchangeTokenResponse> {
+    if (!ENV.appId) {
+      throw new Error("VITE_APP_ID is required for OAuth operations");
+    }
     const payload: ExchangeTokenRequest = {
       clientId: ENV.appId,
       grantType: "authorization_code",
@@ -113,6 +116,21 @@ class SDKServer {
     return first ? first.toLowerCase() : null;
   }
 
+  private getRequiredAppId(): string {
+    if (!ENV.appId) {
+      throw new Error("VITE_APP_ID is required for OAuth operations");
+    }
+    return ENV.appId;
+  }
+
+  private getLoginMethodFromData(
+    data: GetUserInfoResponse | GetUserInfoWithJwtResponse
+  ): string | null {
+    const record = data as unknown as { platforms?: unknown; platform?: unknown };
+    const fallback = typeof record.platform === "string" ? record.platform : null;
+    return this.deriveLoginMethod(record.platforms, fallback);
+  }
+
   /**
    * Exchange OAuth authorization code for access token
    * @example
@@ -134,12 +152,9 @@ class SDKServer {
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
-    const loginMethod = this.deriveLoginMethod(
-      (data as Record<string, unknown>)?.platforms,
-      (data as Record<string, unknown>)?.platform ?? data.platform ?? null
-    );
+    const loginMethod = this.getLoginMethodFromData(data);
     return {
-      ...(data as Record<string, unknown>),
+      ...(data as unknown as Record<string, unknown>),
       platform: loginMethod,
       loginMethod,
     } as GetUserInfoResponse;
@@ -171,7 +186,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId: this.getRequiredAppId(),
         name: options.name || "",
       },
       options
@@ -237,7 +252,7 @@ class SDKServer {
   ): Promise<GetUserInfoWithJwtResponse> {
     const payload: GetUserInfoWithJwtRequest = {
       jwtToken,
-      projectId: ENV.appId,
+      projectId: this.getRequiredAppId(),
     };
 
     const { data } = await this.client.post<GetUserInfoWithJwtResponse>(
@@ -245,12 +260,9 @@ class SDKServer {
       payload
     );
 
-    const loginMethod = this.deriveLoginMethod(
-      (data as Record<string, unknown>)?.platforms,
-      (data as Record<string, unknown>)?.platform ?? data.platform ?? null
-    );
+    const loginMethod = this.getLoginMethodFromData(data);
     return {
-      ...(data as Record<string, unknown>),
+      ...(data as unknown as Record<string, unknown>),
       platform: loginMethod,
       loginMethod,
     } as GetUserInfoWithJwtResponse;

@@ -1,14 +1,17 @@
 /**
  * Glossary Router
  * Multi-language glossary management: English as base, with ES/TH/HI/VI translations.
- * CSV format: 中文術語, 英文, 西班牙語, 泰文, 印地語, 越南文
  *
- * Auth: accepts both OAuth admin sessions AND dashboard sessions.
+ * Auth: accepts both platform admin sessions and dashboard admin sessions.
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import {
+  canManageGlossary,
+  getPrincipalActorId,
+  resolvePrincipal,
+} from "../_core/authz";
 import { publicProcedure, router } from "../_core/trpc";
-import { verifyDashboardToken, DASHBOARD_COOKIE } from "../_core/dashboardAuth";
 import {
   bulkCreateGlossaryEntries,
   createGlossaryBatch,
@@ -20,39 +23,47 @@ import {
 import { storagePut } from "../storage";
 
 /**
- * Auth middleware that accepts EITHER:
- *   - OAuth admin session (ctx.user.role === "admin"), OR
- *   - Dashboard session (dashboard_session cookie)
- *
- * Resolves ctx._userId to the authenticated user/admin ID.
+ * Auth middleware that accepts either platform admins or dashboard admins.
+ * Resolves ctx._userId to the authenticated actor ID.
  */
 const glossaryProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  // Check OAuth admin session first
-  if (ctx.user?.role === "admin") {
-    return next({ ctx: { ...ctx, _userId: ctx.user.id } });
+  const principal = resolvePrincipal(ctx);
+  if (!canManageGlossary(principal)) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入" });
   }
 
-  // Check dashboard session
-  const cookieHeader = ctx.req.headers.cookie as string | undefined;
-  if (cookieHeader) {
-    const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${DASHBOARD_COOKIE}=([^;]+)`));
-    if (match?.[1]) {
-      const session = await verifyDashboardToken(match[1]);
-      if (session) {
-        return next({ ctx: { ...ctx, _userId: session.adminId } });
-      }
-    }
+  const actorId = getPrincipalActorId(principal);
+  if (!actorId) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入" });
   }
 
-  throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入" });
+  return next({ ctx: { ...ctx, principal, _userId: actorId } });
 });
 
 function randomSuffix() {
   return Math.random().toString(36).slice(2, 8);
 }
 
+/**
+ * Header-row detection for the glossary CSV importer. The UI template ships with
+ * Chinese headers ("中文術語, 英文, 西班牙語, 泰文, 印地語, 越南文"); the old check only
+ * recognized the English "sourceterm" and imported the Chinese header as a real entry.
+ */
+const GLOSSARY_HEADER_TOKENS = new Set([
+  // English
+  "sourceterm", "source", "englishterm", "english",
+  "spanishterm", "thaiterm", "hinditerm", "vietnameseterm",
+  // Chinese (UI template + common variants)
+  "中文術語", "中文术语", "原文", "英文", "西班牙語", "西班牙语", "西文",
+  "泰文", "泰语", "印地語", "印地语", "越南文", "越南语",
+]);
+
+function isGlossaryHeaderCell(value: string | undefined): boolean {
+  if (!value) return false;
+  return GLOSSARY_HEADER_TOKENS.has(value.trim().toLowerCase());
+}
+
 export const glossaryRouter = router({
-  // ── List all glossary entries ──────────────────────────────────────────────
   list: glossaryProcedure
     .input(z.object({ search: z.string().optional() }).optional())
     .query(async ({ input }) => {
@@ -69,12 +80,10 @@ export const glossaryRouter = router({
       return entries;
     }),
 
-  // ── List upload batches ────────────────────────────────────────────────────
   listBatches: glossaryProcedure.query(async () => {
     return listGlossaryBatches();
   }),
 
-  // ── Add single entry ───────────────────────────────────────────────────────
   addEntry: glossaryProcedure
     .input(
       z.object({
@@ -101,7 +110,6 @@ export const glossaryRouter = router({
       return { id };
     }),
 
-  // ── Delete entry ───────────────────────────────────────────────────────────
   deleteEntry: glossaryProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
@@ -109,9 +117,6 @@ export const glossaryRouter = router({
       return { success: true };
     }),
 
-  // ── Upload CSV ─────────────────────────────────────────────────────────────
-  // CSV format (with optional header row):
-  // 中文術語, 英文, 西班牙語, 泰文, 印地語, 越南文
   uploadCsv: glossaryProcedure
     .input(
       z.object({
@@ -137,10 +142,13 @@ export const glossaryRouter = router({
       for (const line of lines) {
         const cols = line.split(",").map((c) => c.trim());
         if (cols.length < 2) continue;
+
         const [sourceTerm, englishTerm, spanishTerm, thaiTerm, hindiTerm, vietnameseTerm] = cols;
-        // Skip header row
-        if (!sourceTerm || sourceTerm === "中文術語" || sourceTerm.toLowerCase() === "sourceterm") continue;
+        if (!sourceTerm) continue;
+        // Skip header rows in either English or Chinese.
+        if (isGlossaryHeaderCell(sourceTerm) || isGlossaryHeaderCell(englishTerm)) continue;
         if (!englishTerm) continue;
+
         entries.push({
           sourceTerm,
           englishTerm,
@@ -155,7 +163,7 @@ export const glossaryRouter = router({
       if (entries.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "CSV 中未找到有效術語，請確認格式：中文術語, 英文, 西班牙語, 泰文, 印地語, 越南文",
+          message: "CSV 中未找到有效詞條",
         });
       }
 

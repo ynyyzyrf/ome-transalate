@@ -4,6 +4,7 @@ import { SUPPORTED_LANGUAGES } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { Globe, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/i18n";
 
 interface LanguageSelectProps {
   onSelect: (lang: string) => void;
@@ -11,6 +12,7 @@ interface LanguageSelectProps {
 
 export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
   const { isAuthenticated } = useAuth();
+  const t = useT();
   const setLangMutation = trpc.user.setLanguage.useMutation({
     onError: () => {},
   });
@@ -32,13 +34,13 @@ export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
             <Globe className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">
-            企業多語言培訓學習平台
+            {t("learn.selectTitle")}
           </h1>
           <p className="text-white/60 text-lg">
             Enterprise Multilingual Training Platform
           </p>
           <p className="text-white/40 mt-2 text-sm">
-            請選擇您的學習語言 · Please select your preferred language
+            {t("learn.selectSubtitle")}
           </p>
         </div>
 
@@ -78,7 +80,7 @@ export default function LanguageSelect({ onSelect }: LanguageSelectProps) {
         </div>
 
         <p className="text-center text-white/30 text-xs mt-8">
-          您可以在學習門戶中隨時更改語言偏好
+          {t("learn.selectChangeNote")}
         </p>
       </div>
     </div>

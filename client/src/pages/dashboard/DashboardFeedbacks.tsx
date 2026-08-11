@@ -1,5 +1,5 @@
 /**
- * DashboardFeedbacks - 後台反饋處理頁面
+ * DashboardFeedbacks — 後台反饋處理頁面
  * 以教程為分組清單，展開查看每條反饋詳情，支持狀態跟進、篩選搜尋
  */
 import { useState, useMemo } from "react";
@@ -27,24 +27,12 @@ import {
   RefreshCw,
   ExternalLink,
 } from "lucide-react";
-
-// ── Status helpers ─────────────────────────────────────────────────────────────
-const STATUS_LABELS: Record<number, string> = {
-  0: "未接收",
-  1: "處理中",
-  2: "已處理",
-};
+import { useT, useI18n } from "@/i18n";
 
 const STATUS_COLORS: Record<number, string> = {
   0: "bg-gray-100 text-gray-600 border-gray-200",
   1: "bg-blue-100 text-blue-700 border-blue-200",
   2: "bg-green-100 text-green-700 border-green-200",
-};
-
-const NEXT_STATUS: Record<number, { label: string; value: number } | null> = {
-  0: { label: "標記為處理中", value: 1 },
-  1: { label: "標記為已處理", value: 2 },
-  2: null,
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -70,32 +58,46 @@ interface TutorialGroup {
 }
 
 export default function DashboardFeedbacks() {
+  const t = useT();
+  const { locale } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [expandedTutorials, setExpandedTutorials] = useState<Set<number>>(new Set());
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
+  // Translated at render time so a UI-language switch reflects immediately.
+  const STATUS_LABELS: Record<number, string> = {
+    0: t("dashboard.fbPending"),
+    1: t("dashboard.fbProcessing"),
+    2: t("dashboard.fbResolved"),
+  };
+  const NEXT_STATUS: Record<number, { label: string; value: number } | null> = {
+    0: { label: t("dashboard.fbMarkProcessing"), value: 1 },
+    1: { label: t("dashboard.fbMarkResolved"), value: 2 },
+    2: null,
+  };
+
   // Fetch all feedbacks (large page size to group client-side)
-  const { data, refetch, isLoading } = trpc.dashboardFeedbacks.list.useQuery({
+  const { data, refetch, isLoading } = trpc.feedbacks.adminList.useQuery({
     page: 1,
-    pageSize: 500,
+    pageSize: 100,
     status: statusFilter !== "all" ? parseInt(statusFilter) : undefined,
   });
 
   // Fetch courses for display names
-  const { data: coursesData } = trpc.dashboardFeedbacks.listCourses.useQuery();
+  const { data: coursesData } = trpc.feedbacks.listCourses.useQuery();
   const courseMap = useMemo(() => {
     const map: Record<number, string> = {};
     (coursesData ?? []).forEach((c: { id: number; title: string | null }) => {
-      map[c.id] = c.title ?? `教程 #${c.id}`;
+      map[c.id] = c.title ?? t("dashboard.fbTutorialFallback", { id: c.id });
     });
     return map;
-  }, [coursesData]);
+  }, [coursesData, t]);
 
-  const updateStatusMutation = trpc.dashboardFeedbacks.updateStatus.useMutation({
+  const updateStatusMutation = trpc.feedbacks.updateStatus.useMutation({
     onSuccess: () => {
-      toast.success("狀態已更新");
+      toast.success(t("dashboard.fbStatusUpdated"));
       setUpdatingId(null);
       refetch();
     },
@@ -137,7 +139,7 @@ export default function DashboardFeedbacks() {
           tutorialTitle:
             (fb.tutorialTitle as string | null | undefined) ??
             courseMap[tid] ??
-            `教程 #${tid}`,
+            t("dashboard.fbTutorialFallback", { id: tid }),
           feedbacks: [],
         });
       }
@@ -145,7 +147,7 @@ export default function DashboardFeedbacks() {
     });
 
     return Array.from(groupMap.values());
-  }, [data, courseMap, searchTerm, sortOrder]);
+  }, [data, courseMap, searchTerm, sortOrder, t]);
 
   const totalFeedbacks = data?.total ?? 0;
 
@@ -168,7 +170,7 @@ export default function DashboardFeedbacks() {
 
   const formatFeedbackDate = (date: Date | string) => {
     const d = new Date(date);
-    return d.toLocaleString("zh-TW", {
+    return d.toLocaleString(locale === "en" ? "en-US" : "zh-TW", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -183,14 +185,17 @@ export default function DashboardFeedbacks() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">反饋處理</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("dashboard.fbTitle")}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              共 {tutorialGroups.length} 個教程有反饋，總計 {totalFeedbacks} 條
+              {t("dashboard.fbSummary", {
+                groups: tutorialGroups.length,
+                total: totalFeedbacks,
+              })}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
             <RefreshCw className="w-4 h-4" />
-            刷新
+            {t("dashboard.fbRefresh")}
           </Button>
         </div>
 
@@ -200,7 +205,7 @@ export default function DashboardFeedbacks() {
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="按教程名稱搜尋..."
+              placeholder={t("dashboard.fbSearch")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -210,13 +215,13 @@ export default function DashboardFeedbacks() {
           {/* Status filter */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="處理狀態" />
+              <SelectValue placeholder={t("dashboard.fbStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部狀態</SelectItem>
-              <SelectItem value="0">未接收</SelectItem>
-              <SelectItem value="1">處理中</SelectItem>
-              <SelectItem value="2">已處理</SelectItem>
+              <SelectItem value="all">{t("dashboard.fbAllStatus")}</SelectItem>
+              <SelectItem value="0">{t("dashboard.fbPending")}</SelectItem>
+              <SelectItem value="1">{t("dashboard.fbProcessing")}</SelectItem>
+              <SelectItem value="2">{t("dashboard.fbResolved")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -226,8 +231,8 @@ export default function DashboardFeedbacks() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="desc">最新反饋在前</SelectItem>
-              <SelectItem value="asc">最早反饋在前</SelectItem>
+              <SelectItem value="desc">{t("dashboard.fbSortNewest")}</SelectItem>
+              <SelectItem value="asc">{t("dashboard.fbSortOldest")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -236,13 +241,13 @@ export default function DashboardFeedbacks() {
         {isLoading ? (
           <div className="py-20 text-center text-muted-foreground">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            載入中...
+            {t("common.loading")}
           </div>
         ) : tutorialGroups.length === 0 ? (
           <div className="py-20 text-center text-muted-foreground">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p className="text-base">暫無反饋記錄</p>
-            <p className="text-sm mt-1">用戶在學習頁面提交反饋後將在此顯示</p>
+            <p className="text-base">{t("dashboard.fbEmpty")}</p>
+            <p className="text-sm mt-1">{t("dashboard.fbEmptyDesc")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -279,7 +284,7 @@ export default function DashboardFeedbacks() {
                           rel="noopener noreferrer"
                           className="text-muted-foreground hover:text-primary transition-colors shrink-0"
                           onClick={(e) => e.stopPropagation()}
-                          title="查看教程"
+                          title={t("dashboard.fbViewTutorial")}
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -288,22 +293,22 @@ export default function DashboardFeedbacks() {
                       <div className="flex items-center gap-2 shrink-0">
                         {pendingCount > 0 && (
                           <span className="inline-flex items-center text-xs bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-2.5 py-0.5">
-                            未接收 {pendingCount}
+                            {t("dashboard.fbPending")} {pendingCount}
                           </span>
                         )}
                         {processingCount > 0 && (
                           <span className="inline-flex items-center text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5">
-                            處理中 {processingCount}
+                            {t("dashboard.fbProcessing")} {processingCount}
                           </span>
                         )}
                         {doneCount > 0 && (
                           <span className="inline-flex items-center text-xs bg-green-100 text-green-700 border border-green-200 rounded-full px-2.5 py-0.5">
-                            已處理 {doneCount}
+                            {t("dashboard.fbResolved")} {doneCount}
                           </span>
                         )}
                         <span className="inline-flex items-center gap-1 text-xs font-medium bg-primary/10 text-primary rounded-full px-2.5 py-0.5">
                           <MessageSquare className="w-3 h-3" />
-                          {group.feedbacks.length} 條
+                          {t("dashboard.fbCount", { count: group.feedbacks.length })}
                         </span>
                       </div>
                     </div>
@@ -326,11 +331,14 @@ export default function DashboardFeedbacks() {
                               <div className="flex items-start justify-between gap-4 mb-4">
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                                   <span className="inline-flex items-center gap-1.5 font-mono text-xs bg-muted rounded px-2 py-0.5">
-                                    反饋 #{fb.id}
+                                    {t("dashboard.fbFeedbackId", { id: fb.id })}
                                   </span>
                                   <span className="inline-flex items-center gap-1.5">
                                     <User className="w-3.5 h-3.5" />
-                                    {fb.userName ?? `用戶 ${fb.userId ?? "匿名"}`}
+                                    {fb.userName ??
+                                      t("dashboard.fbUserName", {
+                                        id: fb.userId ?? t("dashboard.fbAnonymous"),
+                                      })}
                                   </span>
                                   <span className="inline-flex items-center gap-1.5">
                                     <Calendar className="w-3.5 h-3.5" />
@@ -356,7 +364,7 @@ export default function DashboardFeedbacks() {
                                   {fb.originalText && (
                                     <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
                                       <p className="text-xs font-medium text-amber-700 mb-1.5">
-                                        📄 被反饋的中文原文
+                                        📄 {t("dashboard.fbOriginalTitle")}
                                       </p>
                                       <p className="text-sm text-amber-900 leading-relaxed">
                                         {fb.originalText}
@@ -366,7 +374,7 @@ export default function DashboardFeedbacks() {
                                   {fb.translatedText && (
                                     <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
                                       <p className="text-xs font-medium text-blue-700 mb-1.5">
-                                        🌐 對應 AI 翻譯內容
+                                        🌐 {t("dashboard.fbTranslatedTitle")}
                                       </p>
                                       <p className="text-sm text-blue-900 leading-relaxed">
                                         {fb.translatedText}
@@ -379,7 +387,7 @@ export default function DashboardFeedbacks() {
                               {/* Row 3: Feedback content */}
                               <div className="rounded-lg bg-muted/40 border border-border p-3 mb-4">
                                 <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                                  💬 用戶反饋意見/建議
+                                  💬 {t("dashboard.fbContentTitle")}
                                 </p>
                                 <p className="text-sm text-foreground leading-relaxed">
                                   {fb.feedbackContent}
@@ -390,7 +398,7 @@ export default function DashboardFeedbacks() {
                               {fb.adminNote && (
                                 <div className="rounded-lg bg-green-50 border border-green-200 p-3 mb-4">
                                   <p className="text-xs font-medium text-green-700 mb-1">
-                                    ✅ 處理備注
+                                    ✅ {t("dashboard.fbAdminNote")}
                                   </p>
                                   <p className="text-sm text-green-900">{fb.adminNote}</p>
                                 </div>
@@ -413,7 +421,7 @@ export default function DashboardFeedbacks() {
                                   </Button>
                                 ) : (
                                   <span className="text-xs text-muted-foreground italic">
-                                    已完成處理
+                                    {t("dashboard.fbDone")}
                                   </span>
                                 )}
                               </div>

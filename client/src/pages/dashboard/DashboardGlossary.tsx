@@ -1,5 +1,5 @@
 import DashboardAdminLayout from "@/components/DashboardAdminLayout";
-import GlossaryManager from "@/pages/admin/GlossaryManager";
+import GlossaryManager from "@/components/GlossaryManager";
 
 /**
  * Dashboard Glossary page wraps the existing GlossaryManager component

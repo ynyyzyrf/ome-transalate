@@ -101,14 +101,30 @@ jspm_packages/
 tmp/
 temp/
 .worktrees/
+.codex-logs/
+.manus-logs/
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
+# Local uploads and generated assets
+server/uploads/
+
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
+
+# Agent tooling state & scratch notes (not project source)
+.agents/
+.claude/
+.omc/
+.workbuddy/
+skills-lock.json
+task_plan.md
+findings.md
+progress.md
+

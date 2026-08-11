@@ -23,6 +23,12 @@ const envSchema = z.object({
   // JWT
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
 
+  // Dashboard admin auth (optional — independent secret for the dashboard session cookie.
+  // Strongly recommended so a leaked learner JWT secret cannot forge a dashboard session.)
+  DASHBOARD_JWT_SECRET: z.string().min(32).optional(),
+  // Dashboard setup key (optional — when unset, the /dashboard setup endpoint is disabled)
+  DASHBOARD_SETUP_KEY: z.string().optional(),
+
   // OIDC SSO (optional — for internal SSO login)
   OIDC_ISSUER_URL: z.string().optional(),
   OIDC_CLIENT_ID: z.string().optional(),
@@ -33,6 +39,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3000),
   FRONTEND_URL: z.string().optional(),
+  UPLOADS_DIR: z.string().optional(),
 
   // AWS/S3 (optional, for file storage)
   AWS_ACCESS_KEY_ID: z.string().optional(),
@@ -48,6 +55,11 @@ const envSchema = z.object({
   OAUTH_SERVER_URL: z.string().optional(),
   VITE_APP_ID: z.string().optional(),
   OWNER_OPEN_ID: z.string().optional(),
+
+  // MinerU Agent API (optional, used for non-DOCX file parsing fallback)
+  MINERU_BASE_URL: z.string().optional(),
+  MINERU_TIMEOUT_SECONDS: z.coerce.number().int().positive().optional(),
+  MINERU_API_KEY: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema> & {
@@ -65,8 +77,11 @@ type Env = z.infer<typeof envSchema> & {
 };
 
 function loadEnv(): Env {
+  const nodeEnv = process.env.NODE_ENV ?? "development";
+  const isTestEnv = nodeEnv === "test";
+
   const result = envSchema.safeParse({
-    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL: process.env.DATABASE_URL ?? (isTestEnv ? "mysql://test:test@127.0.0.1:3306/test" : undefined),
     LLM_PROVIDER: process.env.LLM_PROVIDER,
     LLM_MODEL: process.env.LLM_MODEL,
     LLM_TRANSLATE_PROVIDER: process.env.LLM_TRANSLATE_PROVIDER,
@@ -77,14 +92,17 @@ function loadEnv(): Env {
     OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
-    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_SECRET: process.env.JWT_SECRET ?? (isTestEnv ? "test-jwt-secret-please-change-in-real-env-123456" : undefined),
+    DASHBOARD_JWT_SECRET: process.env.DASHBOARD_JWT_SECRET,
+    DASHBOARD_SETUP_KEY: process.env.DASHBOARD_SETUP_KEY,
     OIDC_ISSUER_URL: process.env.OIDC_ISSUER_URL,
     OIDC_CLIENT_ID: process.env.OIDC_CLIENT_ID,
     OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,
     OIDC_JWKS_URL: process.env.OIDC_JWKS_URL,
-    NODE_ENV: process.env.NODE_ENV,
+    NODE_ENV: nodeEnv,
     PORT: process.env.PORT,
     FRONTEND_URL: process.env.FRONTEND_URL,
+    UPLOADS_DIR: process.env.UPLOADS_DIR,
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
@@ -94,24 +112,31 @@ function loadEnv(): Env {
     OAUTH_SERVER_URL: process.env.OAUTH_SERVER_URL,
     VITE_APP_ID: process.env.VITE_APP_ID,
     OWNER_OPEN_ID: process.env.OWNER_OPEN_ID,
+    MINERU_BASE_URL: process.env.MINERU_BASE_URL,
+    MINERU_TIMEOUT_SECONDS: process.env.MINERU_TIMEOUT_SECONDS,
+    MINERU_API_KEY: process.env.MINERU_API_KEY,
   });
 
   if (!result.success) {
     const missing = result.error.issues
       .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
       .join("\n");
-    console.error("[Config] Invalid environment variables:\n" + missing);
+    const message = "[Config] Invalid environment variables:\n" + missing;
+    if (isTestEnv) {
+      throw new Error(message);
+    }
+    console.error(message);
     process.exit(1);
   }
 
   const env = result.data;
-  const nodeEnv = env.NODE_ENV;
+  const parsedNodeEnv = env.NODE_ENV;
 
   return {
     ...env,
-    isProduction: nodeEnv === "production",
-    isDevelopment: nodeEnv === "development",
-    isTest: nodeEnv === "test",
+    isProduction: parsedNodeEnv === "production",
+    isDevelopment: parsedNodeEnv === "development",
+    isTest: parsedNodeEnv === "test",
     // Backward compatibility aliases
     appId: env.VITE_APP_ID,
     cookieSecret: env.JWT_SECRET,

@@ -4,19 +4,11 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { listAllTranslationJobs, listUsers, updateUserLanguage, updateUserRole } from "../db";
 import { explainSegment, type ExplainContext } from "../translationEngine";
 
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "管理員權限才能執行此操作" });
-  }
-  return next({ ctx });
-});
-
 export const aiRouter = router({
-  // ── AI Explain segment ─────────────────────────────────────────────────────
   explain: publicProcedure
     .input(
       z.object({
@@ -49,7 +41,6 @@ export const aiRouter = router({
 });
 
 export const translationJobsRouter = router({
-  // ── Admin: List all translation jobs ──────────────────────────────────────
   listAll: adminProcedure
     .input(z.object({ page: z.number().min(1).default(1), pageSize: z.number().default(30) }))
     .query(async ({ input }) => {
@@ -58,7 +49,6 @@ export const translationJobsRouter = router({
 });
 
 export const userRouter = router({
-  // ── Update preferred language ──────────────────────────────────────────────
   setLanguage: protectedProcedure
     .input(z.object({ language: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
@@ -68,14 +58,12 @@ export const userRouter = router({
 });
 
 export const usersAdminRouter = router({
-  // ── Admin: List all users ─────────────────────────────────────────────────
   list: adminProcedure
     .input(z.object({ page: z.number().min(1).default(1), pageSize: z.number().default(30) }))
     .query(async ({ input }) => {
       return listUsers(input.page, input.pageSize);
     }),
 
-  // ── Admin: Update user role ───────────────────────────────────────────────
   setRole: adminProcedure
     .input(
       z.object({
@@ -84,13 +72,13 @@ export const usersAdminRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // Prevent self-demotion to avoid locking out the only admin
-      if (input.userId === ctx.user.id && input.role === "user") {
+      if (input.userId === ctx.user!.id && input.role === "user") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "無法降級自己的管理員權限，請由其他管理員操作",
+          message: "不能把自己降级为普通用户",
         });
       }
+
       await updateUserRole(input.userId, input.role);
       return { success: true };
     }),

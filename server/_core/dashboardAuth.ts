@@ -9,7 +9,10 @@ import { publicProcedure } from "./trpc";
 import { ENV } from "./env";
 
 const DASHBOARD_COOKIE = "dashboard_session";
-const JWT_SECRET = new TextEncoder().encode(ENV.cookieSecret);
+// Dashboard tokens use their own secret when configured (defense-in-depth); otherwise they
+// fall back to the shared secret for backward compatibility. The type claim below is the
+// primary gate — learner access tokens share the fallback secret but never carry type "dashboard".
+const JWT_SECRET = new TextEncoder().encode(ENV.DASHBOARD_JWT_SECRET || ENV.cookieSecret);
 const TOKEN_EXPIRY = "8h";
 
 export interface DashboardSession {
@@ -19,7 +22,7 @@ export interface DashboardSession {
 }
 
 export async function signDashboardToken(session: DashboardSession): Promise<string> {
-  return new SignJWT({ ...session })
+  return new SignJWT({ ...session, type: "dashboard" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(TOKEN_EXPIRY)
@@ -28,35 +31,48 @@ export async function signDashboardToken(session: DashboardSession): Promise<str
 
 export async function verifyDashboardToken(token: string): Promise<DashboardSession | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ["HS256"] });
+    // Only tokens explicitly issued as dashboard sessions are valid here. A token from the
+    // learner access-token flow (type "access", same shared secret) must NOT pass.
+    if (payload.type !== "dashboard" || typeof payload.adminId !== "number") {
+      return null;
+    }
     return {
-      adminId: payload.adminId as number,
-      username: payload.username as string,
-      displayName: payload.displayName as string | null,
+      adminId: payload.adminId,
+      username: typeof payload.username === "string" ? payload.username : "",
+      displayName: typeof payload.displayName === "string" ? payload.displayName : null,
     };
   } catch {
     return null;
   }
 }
 
+export async function getDashboardSessionFromCookieHeader(
+  cookieHeader: string | undefined
+): Promise<DashboardSession | null> {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${DASHBOARD_COOKIE}=([^;]+)`));
+  const token = match?.[1];
+  if (!token) {
+    return null;
+  }
+
+  return verifyDashboardToken(token);
+}
+
 /**
  * tRPC procedure that requires a valid dashboard session cookie.
  */
 export const dashboardProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  const cookieHeader = ctx.req.headers.cookie as string | undefined;
-  let token: string | undefined;
-  if (cookieHeader) {
-    const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${DASHBOARD_COOKIE}=([^;]+)`));
-    token = match?.[1];
-  }
+  const session =
+    ctx.dashboardSession ??
+    (await getDashboardSessionFromCookieHeader(ctx.req.headers.cookie as string | undefined));
 
-  if (!token) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入後台管理系統" });
-  }
-
-  const session = await verifyDashboardToken(token);
   if (!session) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "登入已過期，請重新登入" });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入後台管理系統" });
   }
 
   return next({ ctx: { ...ctx, dashboardSession: session } });

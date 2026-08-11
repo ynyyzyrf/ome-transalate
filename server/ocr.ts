@@ -5,23 +5,29 @@
 import Tesseract from "tesseract.js";
 import type { ParseResult } from "./documentParser";
 
-let workerInstance: Tesseract.Worker | null = null;
+let workerPromise: Promise<Tesseract.Worker> | null = null;
 
 /**
  * Get or create a singleton Tesseract worker.
  * Using a single worker to avoid memory bloat.
+ *
+ * The singleton is a promise, not a worker instance: if two calls race while the
+ * worker is still being created, both await the SAME creation promise instead of
+ * each spawning a worker (the old code leaked a worker on every concurrent pair).
  */
 async function getWorker(): Promise<Tesseract.Worker> {
-  if (!workerInstance) {
-    workerInstance = await Tesseract.createWorker("chi_sim+eng", 1, {
-      logger: (info) => {
-        if (info.status === "recognizing text") {
-          // Progress logging, can be silenced in production
-        }
+  if (!workerPromise) {
+    workerPromise = Tesseract.createWorker("chi_sim+eng", 1, {
+      logger: () => {
+        // Progress logging; silenced.
       },
+    }).catch((err: unknown) => {
+      // Reset on failure so a later call can retry creation.
+      workerPromise = null;
+      throw err;
     });
   }
-  return workerInstance;
+  return workerPromise;
 }
 
 /**
@@ -60,8 +66,9 @@ export async function ocrImage(
  * Call this during server shutdown.
  */
 export async function shutdownOcr(): Promise<void> {
-  if (workerInstance) {
-    await workerInstance.terminate();
-    workerInstance = null;
+  const worker = workerPromise ? await workerPromise.catch(() => null) : null;
+  workerPromise = null;
+  if (worker) {
+    await worker.terminate();
   }
 }

@@ -3,6 +3,11 @@ import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import { verifyLocalToken } from "../routers/authLocal";
 import * as db from "../db";
+import {
+  getDashboardSessionFromCookieHeader,
+  type DashboardSession,
+} from "./dashboardAuth";
+import { getLocalSessionFromCookieHeader } from "./localAuth";
 
 export type AuthSource = "oauth" | "local" | "oidc" | null;
 
@@ -11,6 +16,7 @@ export type TrpcContext = {
   res: CreateExpressContextOptions["res"];
   user: User | null;
   authSource: AuthSource;
+  dashboardSession: DashboardSession | null;
 };
 
 export async function createContext(
@@ -18,6 +24,9 @@ export async function createContext(
 ): Promise<TrpcContext> {
   let user: User | null = null;
   let authSource: AuthSource = null;
+  const dashboardSession = await getDashboardSessionFromCookieHeader(
+    opts.req.headers.cookie as string | undefined
+  );
 
   try {
     // Try OAuth session (existing)
@@ -71,10 +80,29 @@ export async function createContext(
     }
   }
 
+  // Try local session cookie (issued by the unified auth.login for learners)
+  if (!user) {
+    try {
+      const localSession = await getLocalSessionFromCookieHeader(
+        opts.req.headers.cookie as string | undefined
+      );
+      if (localSession) {
+        const sessionUser = await db.getUserById(localSession.userId);
+        if (sessionUser) {
+          user = sessionUser;
+          authSource = "local";
+        }
+      }
+    } catch {
+      // Local session failed, continue as unauthenticated
+    }
+  }
+
   return {
     req: opts.req,
     res: opts.res,
     user,
     authSource,
+    dashboardSession,
   };
 }

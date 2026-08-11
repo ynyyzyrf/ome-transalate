@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { textToSegments } from "./documentParser";
 import { appRouter } from "./routers";
 import { COOKIE_NAME } from "../shared/const";
+import { LOCAL_SESSION_COOKIE } from "./_core/localAuth";
+import { DASHBOARD_COOKIE } from "./_core/dashboardAuth";
 import type { TrpcContext } from "./_core/context";
 
 // ─── Document Parser Tests ────────────────────────────────────────────────────
@@ -75,9 +77,15 @@ describe("auth.logout", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.logout();
     expect(result).toEqual({ success: true });
-    expect(clearedCookies).toHaveLength(1);
+    expect(clearedCookies).toHaveLength(3);
     expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
     expect(clearedCookies[0]?.options).toMatchObject({ maxAge: -1 });
+    // The local session cookie (learners) is cleared too.
+    expect(clearedCookies[1]?.name).toBe(LOCAL_SESSION_COOKIE);
+    expect(clearedCookies[1]?.options).toMatchObject({ maxAge: -1 });
+    // The dashboard admin session cookie is cleared too.
+    expect(clearedCookies[2]?.name).toBe(DASHBOARD_COOKIE);
+    expect(clearedCookies[2]?.options).toMatchObject({ maxAge: -1 });
   });
 });
 

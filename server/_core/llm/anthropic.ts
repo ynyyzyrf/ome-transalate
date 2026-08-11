@@ -23,9 +23,11 @@ function toAnthropicMessages(messages: Message[]) {
   for (const msg of messages) {
     if (msg.role === "system") {
       // Anthropic uses a separate "system" parameter
-      const text = typeof msg.content === "string"
-        ? msg.content
-        : msg.content.map(c => typeof c === "string" ? c : c.type === "text" ? c.text : "").filter(Boolean).join("\n");
+      const content = Array.isArray(msg.content) ? msg.content : [msg.content];
+      const text = content
+        .map((c) => (typeof c === "string" ? c : c.type === "text" ? c.text : ""))
+        .filter(Boolean)
+        .join("\n");
       systemMessages.push(text);
       continue;
     }

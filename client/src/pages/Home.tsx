@@ -1,57 +1,72 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useAdminSession } from "@/_core/hooks/useAdminSession";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
+import { UserMenu } from "@/components/UserMenu";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useT } from "@/i18n";
 import { Globe, BookOpen, Zap, Shield, ArrowRight, Languages, FileText, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Home() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: learnerLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminSession();
   const [, navigate] = useLocation();
+  const t = useT();
+
+  // A visitor is "logged in" when EITHER a learner session (ctx.user) or a
+  // dashboard admin session (dashboard_session) is present.
+  const loading = learnerLoading || adminLoading;
+  const isLoggedIn = isAuthenticated || isAdmin;
 
   const handleGetStarted = () => {
-    navigate("/learn");
+    // Not logged in → the only action is to go log in first.
+    navigate(isLoggedIn ? "/learn" : "/login");
+  };
+
+  const handleLogin = () => {
+    navigate("/login");
   };
 
   const features = [
     {
       icon: FileText,
-      title: "批量文件上傳",
-      desc: "支持 PDF、DOCX、XLSX、PPTX、圖片等多種格式，自動識別並路由至對應處理管道",
+      title: t("home.featureUploadTitle"),
+      desc: t("home.featureUploadDesc"),
     },
     {
       icon: Sparkles,
-      title: "AI 智能翻譯",
-      desc: "調用 LLM 進行高精度翻譯，結合術語庫確保專業詞彙一致性，支持 5 種目標語言",
+      title: t("home.featureTranslateTitle"),
+      desc: t("home.featureTranslateDesc"),
     },
     {
       icon: Languages,
-      title: "對比學習視圖",
-      desc: "三欄佈局同步顯示中文原文與譯文，雙向高亮聯動，直觀對比學習",
+      title: t("home.featureCompareTitle"),
+      desc: t("home.featureCompareDesc"),
     },
     {
       icon: Zap,
-      title: "AI 即時解釋",
-      desc: "每段譯文配備 AI 解釋按鈕，以更簡單語言重新解釋複雜術語和段落",
+      title: t("home.featureExplainTitle"),
+      desc: t("home.featureExplainDesc"),
     },
     {
       icon: BookOpen,
-      title: "術語庫管理",
-      desc: "支持 CSV 批量導入術語表，確保翻譯時嚴格遵循企業專業詞彙標準",
+      title: t("home.featureGlossaryTitle"),
+      desc: t("home.featureGlossaryDesc"),
     },
     {
       icon: Shield,
-      title: "角色權限控制",
-      desc: "管理員可上傳管理文件，員工用戶訪問學習門戶，安全可靠的權限分離",
+      title: t("home.featureRolesTitle"),
+      desc: t("home.featureRolesDesc"),
     },
   ];
 
   const languages = [
-    { flag: "🇨🇳", name: "中文", sub: "原始語言" },
-    { flag: "🇬🇧", name: "English", sub: "英語" },
-    { flag: "🇪🇸", name: "Español", sub: "西班牙語" },
-    { flag: "🇹🇭", name: "ภาษาไทย", sub: "泰語" },
-    { flag: "🇮🇳", name: "हिन्दी", sub: "印地語" },
-    { flag: "🇻🇳", name: "Tiếng Việt", sub: "越南語" },
+    { flag: "🇨🇳", name: "中文", sub: t("home.originalLang") },
+    { flag: "🇬🇧", name: "English", sub: t("home.langEnglish") },
+    { flag: "🇪🇸", name: "Español", sub: t("home.langSpanish") },
+    { flag: "🇹🇭", name: "ภาษาไทย", sub: t("home.langThai") },
+    { flag: "🇮🇳", name: "हिन्दी", sub: t("home.langHindi") },
+    { flag: "🇻🇳", name: "Tiếng Việt", sub: t("home.langVietnamese") },
   ];
 
   return (
@@ -60,47 +75,44 @@ export default function Home() {
       <nav className="sticky top-0 z-50 bg-[var(--sidebar)] border-b border-[var(--sidebar-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Globe className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-[var(--sidebar-foreground)]">多語言培訓平台</span>
+            <span className="font-semibold text-[var(--sidebar-foreground)]">{t("common.appName")}</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => navigate("/learn")}
-            >
-              學習門戶
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => navigate("/dashboard")}
-            >
-              後台管理
-            </Button>
-            {!loading && (
-              isAuthenticated ? (
-                <Button
-                  size="sm"
-                  className="bg-accent hover:bg-accent/90 text-white"
-                  onClick={() => navigate(user?.role === "admin" ? "/admin/documents" : "/learn")}
-                >
-                  {user?.role === "admin" ? "管理後台" : "開始學習"}
-                </Button>
+            <LanguageSwitcher triggerClassName="bg-white/10 border-white/20 text-[var(--sidebar-foreground)]" />
+            {!loading &&
+              (isLoggedIn ? (
+                <>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white/70 hover:text-white hover:bg-white/10"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      {t("home.adminBtn")}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={() => navigate("/learn")}
+                  >
+                    {t("home.startLearning")}
+                  </Button>
+                  <UserMenu className="h-7 w-7" />
+                </>
               ) : (
                 <Button
                   size="sm"
-                  className="bg-accent hover:bg-accent/90 text-white"
-                  onClick={() => window.location.href = getLoginUrl()}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={handleLogin}
                 >
-                  登入
+                  {t("common.login")}
                 </Button>
-              )
-            )}
+              ))}
           </div>
         </div>
       </nav>
@@ -110,31 +122,32 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white/80 mb-6">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
-            AI 驅動的企業培訓本地化解決方案
+            {t("home.heroBadge")}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
-            企業多語言培訓<br />
-            <span className="text-accent">智能本地化學習平台</span>
+            {t("home.heroTitle1")}
+            <br />
+            <span className="text-accent">{t("home.heroTitle2")}</span>
           </h1>
           <p className="text-white/60 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-            將中文培訓材料高效轉化為多語言版本，為全球員工提供直觀的對比學習環境與 AI 即時解釋支持
+            {t("home.heroDesc")}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Button
               size="lg"
-              className="bg-accent hover:bg-accent/90 text-white gap-2 px-6"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-6"
               onClick={handleGetStarted}
             >
-              開始學習 <ArrowRight className="w-4 h-4" />
+              {t("home.startLearning")} <ArrowRight className="w-4 h-4" />
             </Button>
-            {!isAuthenticated && (
+            {!isLoggedIn && (
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 gap-2 px-6"
-                onClick={() => window.location.href = getLoginUrl()}
+                className="text-white border-white/30 hover:bg-white/10 gap-2 px-6"
+                onClick={handleLogin}
               >
-                管理員登入
+                {t("common.login")}
               </Button>
             )}
           </div>
@@ -144,7 +157,7 @@ export default function Home() {
       {/* Languages Section */}
       <section className="py-10 bg-muted/30 border-y border-border">
         <div className="max-w-5xl mx-auto px-4">
-          <p className="text-center text-sm text-muted-foreground mb-6 font-medium">支持語言</p>
+          <p className="text-center text-sm text-muted-foreground mb-6 font-medium">{t("home.supportedLangs")}</p>
           <div className="flex flex-wrap justify-center gap-4">
             {languages.map((lang) => (
               <div key={lang.name} className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
@@ -163,8 +176,8 @@ export default function Home() {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-foreground mb-3">核心功能</h2>
-            <p className="text-muted-foreground">完整的企業培訓本地化解決方案</p>
+            <h2 className="text-2xl font-bold text-foreground mb-3">{t("home.featuresTitle")}</h2>
+            <p className="text-muted-foreground">{t("home.featuresSubtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((f) => (
@@ -183,12 +196,12 @@ export default function Home() {
       {/* CTA */}
       <section className="py-14 px-4 bg-muted/30 border-t border-border">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-3">立即開始使用</h2>
-          <p className="text-muted-foreground mb-6">員工可直接訪問學習門戶，管理員需登入後訪問管理後台</p>
+          <h2 className="text-2xl font-bold text-foreground mb-3">{t("home.ctaTitle")}</h2>
+          <p className="text-muted-foreground mb-6">{t("home.ctaDesc")}</p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button size="lg" className="gap-2" onClick={() => navigate("/learn")}>
+            <Button size="lg" className="gap-2" onClick={handleGetStarted}>
               <BookOpen className="w-4 h-4" />
-              進入學習門戶
+              {isLoggedIn ? t("home.enterPortal") : t("home.startLearning")}
             </Button>
           </div>
         </div>
@@ -196,7 +209,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-border text-center text-sm text-muted-foreground">
-        企業多語言培訓智能本地化學習平台 · 由 AI 驅動
+        {t("home.footer")}
       </footer>
     </div>
   );

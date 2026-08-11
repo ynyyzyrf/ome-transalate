@@ -5,7 +5,6 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -18,8 +17,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  // Don't auto-redirect globally — each layout (AdminLayout / DashboardAdminLayout)
-  // handles its own auth state and redirects appropriately.
+  // Don't auto-redirect globally — DashboardAdminLayout handles its own auth state.
   // Previously this redirected to the OAuth login URL which would kick dashboard
   // users out to a non-existent /app-auth page.
   console.warn("[Auth] Unauthorized API call detected — layout will handle redirect");

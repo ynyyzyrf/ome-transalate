@@ -164,12 +164,19 @@ export function resolveLocalStorageMode(options: LocalStorageModeOptions): boole
 }
 
 function useLocalStorage(): boolean {
-  return resolveLocalStorageMode({
+  const local = resolveLocalStorageMode({
     forgeApiUrl: ENV.forgeApiUrl,
     forgeApiKey: ENV.forgeApiKey,
     isDevelopment: ENV.isDevelopment,
     uploadsDir: ENV.UPLOADS_DIR,
   });
+  if (local && !ENV.isDevelopment) {
+    console.warn(
+      "[storage] No object storage configured (FORGE_API_URL/FORGE_API_KEY); using the local filesystem in production. " +
+        "Uploads are stored on container-local disk and may be lost across restarts or replicas.",
+    );
+  }
+  return local;
 }
 
 export async function storagePut(

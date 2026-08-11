@@ -79,7 +79,7 @@ export const exercisesRouter = router({
         correctAnswer: input.correctAnswer,
         type: input.type,
         order: input.order,
-        createdBy: ctx.user.id,
+        createdBy: ctx.user!.id,
       });
       return { success: true, id };
     }),

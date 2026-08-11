@@ -6,7 +6,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
-import { dashboardProcedure, signDashboardToken, DASHBOARD_COOKIE } from "../_core/dashboardAuth";
+import { dashboardProcedure, signDashboardToken, DASHBOARD_COOKIE, getDashboardSessionFromCookieHeader } from "../_core/dashboardAuth";
+import { ENV } from "../_core/env";
 import { getAdminByUsername, createAdminAccount, listAdminAccounts } from "../db";
 import crypto from "crypto";
 
@@ -80,8 +81,17 @@ export const dashboardRouter = router({
   }),
 
   // ── Get current session ────────────────────────────────────────────────────
-  me: dashboardProcedure.query(({ ctx }) => {
-    return ctx.dashboardSession;
+  // Resolves the dashboard session from the cookie directly (publicProcedure, not
+  // dashboardProcedure): a missing dashboard session is a normal state (anonymous
+  // / learner), not an error. Returns the session or null, mirroring auth.me's
+  // behavior for ctx.user. Guarding admin endpoints stays on dashboardProcedure;
+  // callers here just check `data`.
+  me: publicProcedure.query(async ({ ctx }) => {
+    return (
+      ctx.dashboardSession ??
+      (await getDashboardSessionFromCookieHeader(ctx.req.headers.cookie as string | undefined)) ??
+      null
+    );
   }),
 
   // ── Setup: create first admin account (only if none exists) ───────────────
@@ -95,9 +105,20 @@ export const dashboardRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Validate setup key (use a fixed key for simplicity)
-      if (input.setupKey !== "SETUP_ADMIN_2024") {
+      // Setup key comes from the environment (DASHBOARD_SETUP_KEY). The endpoint is
+      // disabled entirely when no key is configured, and only works before the first
+      // admin account exists — never as a backdoor after bootstrap.
+      const configuredKey = ENV.DASHBOARD_SETUP_KEY;
+      if (!configuredKey) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "設定功能未啟用" });
+      }
+      if (input.setupKey !== configuredKey) {
         throw new TRPCError({ code: "FORBIDDEN", message: "無效的設置密鑰" });
+      }
+
+      const admins = await listAdminAccounts();
+      if (admins.length > 0) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "系統已配置管理員" });
       }
 
       // Check if username already exists

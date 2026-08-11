@@ -22,6 +22,20 @@
       "when": 1777009133107,
       "tag": "0002_serious_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1779142861421,
+      "tag": "0003_overrated_lizard",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786273258142,
+      "tag": "0004_next_whizzer",
+      "breakpoints": true
     }
   ]
 }

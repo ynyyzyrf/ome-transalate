@@ -1,19 +1,57 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { useAdminSession } from "@/_core/hooks/useAdminSession";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LanguageSelect from "./LanguageSelect";
-import { Search, BookOpen, Globe, LogIn, Settings, FileText, ChevronRight } from "lucide-react";
+import { Search, BookOpen, Globe, Settings, FileText, ChevronRight, Loader2 } from "lucide-react";
 import { SUPPORTED_LANGUAGES, LANGUAGE_MAP, formatDate, getFileTypeIcon } from "@/lib/utils";
 import { useLocation } from "wouter";
+import { UserMenu } from "@/components/UserMenu";
+import { useT, useI18n } from "@/i18n";
 
+/**
+ * Auth guard for the tutorial library. Browsing tutorials (list + viewer)
+ * requires a login — either a learner (auth.me) or a dashboard admin.
+ * The guard lives in its own component so all hooks in LearnPortalContent run
+ * unconditionally (no conditional-return hook violations).
+ */
 export default function LearnPortal() {
+  const { isAuthenticated, loading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminSession();
   const [, navigate] = useLocation();
-  const { user, isAuthenticated, loading } = useAuth();
+
+  const authLoading = loading || adminLoading;
+  const isLoggedIn = isAuthenticated || isAdmin;
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (isLoggedIn) return;
+    navigate("/login", { replace: true });
+  }, [authLoading, isLoggedIn, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) return null;
+
+  return <LearnPortalContent />;
+}
+
+function LearnPortalContent() {
+  const [, navigate] = useLocation();
+  const t = useT();
+  const { locale } = useI18n();
+  const { user } = useAuth();
+  const { isAdmin } = useAdminSession();
   const [preferredLang, setPreferredLang] = useState<string | null>(null);
   const [displayLang, setDisplayLang] = useState("en");
   const [search, setSearch] = useState("");
@@ -45,12 +83,12 @@ export default function LearnPortal() {
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-[var(--sidebar)] border-b border-[var(--sidebar-border)] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <a href="/" className="flex items-center gap-2.5 shrink-0 group" title="返回首頁">
+          <a href="/" className="flex items-center gap-2.5 shrink-0 group" title={t("learn.backHomeTitle")}>
             <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center group-hover:bg-accent/80 transition-colors">
               <Globe className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-semibold text-[var(--sidebar-foreground)] text-sm group-hover:text-white/80 transition-colors">
-              多語言培訓平台
+              {t("common.appName")}
             </span>
           </a>
 
@@ -58,7 +96,7 @@ export default function LearnPortal() {
           <div className="flex-1 max-w-md relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="搜索教程名稱或內容..."
+              placeholder={t("learn.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-8 bg-white/10 border-white/20 text-[var(--sidebar-foreground)] placeholder:text-white/40 focus:bg-white/15"
@@ -81,34 +119,19 @@ export default function LearnPortal() {
               </SelectContent>
             </Select>
 
-            {isAuthenticated ? (
-              <>
-                {user?.role === "admin" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-white/70 hover:text-white hover:bg-white/10 gap-1.5"
-                    onClick={() => navigate("/admin/documents")}
-                  >
-                    <Settings className="w-3.5 h-3.5" />
-                    管理後台
-                  </Button>
-                )}
-                <div className="w-7 h-7 rounded-full bg-accent/40 flex items-center justify-center text-xs font-semibold text-white">
-                  {user?.name?.charAt(0) || "U"}
-                </div>
-              </>
-            ) : (
+            {isAdmin ? (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 text-white/70 hover:text-white hover:bg-white/10 gap-1.5"
-                onClick={() => window.location.href = getLoginUrl()}
+                onClick={() => navigate("/dashboard")}
               >
-                <LogIn className="w-3.5 h-3.5" />
-                登入
+                <Settings className="w-3.5 h-3.5" />
+                {t("learn.adminBtn")}
               </Button>
-            )}
+            ) : null}
+
+            <UserMenu className="h-7 w-7" />
           </div>
         </div>
       </header>
@@ -118,10 +141,10 @@ export default function LearnPortal() {
         {/* Hero */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">
-            培訓教程庫
+            {t("learn.portalTitle")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            瀏覽並學習多語言培訓材料，支持中文對比閱讀
+            {t("learn.portalDesc")}
           </p>
         </div>
 
@@ -135,14 +158,14 @@ export default function LearnPortal() {
         ) : documents.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
-            <p className="text-lg font-medium">暫無已發布的教程</p>
+            <p className="text-lg font-medium">{t("learn.emptyTitle")}</p>
             <p className="text-sm mt-1">
-              {search ? "嘗試其他搜索關鍵詞" : "管理員尚未發布任何培訓材料"}
+              {search ? t("learn.emptySearchHint") : t("learn.emptyNoDocs")}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc) => (
+            {documents.map((doc: any) => (
               <Card
                 key={doc.id}
                 className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-border"
@@ -156,11 +179,11 @@ export default function LearnPortal() {
                         {doc.title}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1.5">
-                        {formatDate(doc.createdAt)}
+                        {formatDate(doc.createdAt, locale)}
                       </p>
-                      {doc.extractedText && (
+                      {doc.description && (
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
-                          {doc.extractedText.slice(0, 100)}...
+                          {doc.description.length > 100 ? `${doc.description.slice(0, 100)}...` : doc.description}
                         </p>
                       )}
                     </div>
@@ -174,7 +197,7 @@ export default function LearnPortal() {
                       </span>
                     </div>
                     <span className="text-xs text-primary flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-                      開始學習 <ChevronRight className="w-3.5 h-3.5" />
+                      {t("home.startLearning")} <ChevronRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </CardContent>
