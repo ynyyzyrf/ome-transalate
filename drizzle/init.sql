@@ -1,7 +1,7 @@
 -- ============================================================
 -- ome-translate / ome-transalate — production DB initializer
 -- Generated from drizzle migrations tracked in
---   drizzle/meta/_journal.json (idx 0..3)
+--   drizzle/meta/_journal.json (idx 0..4)
 -- Plus a seeded admin row matching the salt+scrypt layout
 -- used by server/routers/dashboard.ts.
 --
@@ -86,6 +86,9 @@ CREATE TABLE IF NOT EXISTS `translation_jobs` (
   `targetLanguage` varchar(16) NOT NULL,
   `status` enum('pending','processing','completed','failed') NOT NULL DEFAULT 'pending',
   `errorMessage` text,
+  `workerId` varchar(64),
+  `attempts` int NOT NULL DEFAULT 0,
+  `claimedAt` timestamp NULL,
   `translatedSegments` json,
   `outputS3Key` varchar(1024),
   `outputS3Url` text,
@@ -311,6 +314,25 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 SET @idx_exists := (SELECT COUNT(*) FROM information_schema.statistics
   WHERE table_schema = DATABASE() AND table_name = 'users' AND index_name = 'idx_users_email');
 SET @sql := IF(@idx_exists = 0, 'CREATE UNIQUE INDEX `idx_users_email` ON `users` (`email`)', 'SELECT "idx_users_email ok"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ─── 0004_next_whizzer ─────────────────────────────────────────────────────
+-- Persistent translation queue: worker claim ownership columns.
+-- (CREATE TABLE above already includes them for fresh DBs; these guards
+--  upgrade an existing DB that predates migration 0004.)
+SET @col_exists := (SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'translation_jobs' AND column_name = 'workerId');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE `translation_jobs` ADD COLUMN `workerId` varchar(64)', 'SELECT "translation_jobs.workerId ok"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'translation_jobs' AND column_name = 'attempts');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE `translation_jobs` ADD COLUMN `attempts` int NOT NULL DEFAULT 0', 'SELECT "translation_jobs.attempts ok"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'translation_jobs' AND column_name = 'claimedAt');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE `translation_jobs` ADD COLUMN `claimedAt` timestamp NULL', 'SELECT "translation_jobs.claimedAt ok"');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ─── Seed: initial admin account ───────────────────────────────────────────
