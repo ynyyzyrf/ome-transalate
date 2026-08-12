@@ -12,7 +12,11 @@ import type { IRBlock, ExplainState, FeedbackRecord } from "./types";
  * document, current translation job, all jobs, my feedbacks, and the
  * segment/translation lookup helpers shared by the three columns.
  */
-export function useLearnData(docId: number, selectedLang: string, isAuthenticated: boolean) {
+export function useLearnData(
+  docId: number,
+  selectedLang: string,
+  canGiveFeedback: boolean
+) {
   const enabled = !!docId;
 
   const { data: doc, isLoading: docLoading } = trpc.documents.getById.useQuery(
@@ -37,7 +41,7 @@ export function useLearnData(docId: number, selectedLang: string, isAuthenticate
   // My feedbacks for this tutorial
   const { data: myFeedbacks, refetch: refetchMyFeedbacks } = trpc.feedbacks.myFeedbacks.useQuery(
     { tutorialId: docId },
-    { enabled: isAuthenticated && enabled }
+    { enabled: canGiveFeedback && enabled }
   );
 
   const irBlocks: IRBlock[] = (doc as any)?.ir?.blocks || [];

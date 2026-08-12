@@ -11,7 +11,8 @@ import {
   canManageGlossary,
   resolvePrincipal,
 } from "../_core/authz";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import type { AuthPrincipal } from "../_core/authTypes";
+import { publicProcedure, router } from "../_core/trpc";
 import {
   createFeedback,
   getFeedbackById,
@@ -20,6 +21,42 @@ import {
   listDocuments,
   updateFeedbackStatus,
 } from "../db";
+
+/**
+ * Map a resolved principal to a feedbacks.userId value.
+ *
+ * Learners and platform admins carry a users.id (positive). Dashboard admins
+ * live in `admin_accounts`, not `users` — store their feedback under a negative
+ * sentinel (-adminId) so the id can never collide with a learner's users.id,
+ * and `getFeedbacksByUser(-adminId)` retrieves exactly their own records.
+ */
+function feedbackUserId(principal: Exclude<AuthPrincipal, { kind: "anonymous" }>): number {
+  if (principal.kind === "dashboard_admin") return -principal.adminId;
+  return principal.userId;
+}
+
+function feedbackUserName(
+  principal: Exclude<AuthPrincipal, { kind: "anonymous" }>,
+  fallback: string
+): string {
+  if (principal.kind === "dashboard_admin") {
+    return principal.displayName ?? principal.username ?? fallback;
+  }
+  return fallback;
+}
+
+/**
+ * Mixed-auth middleware that accepts either a learner / platform admin
+ * (ctx.user) or a dashboard admin (ctx.dashboardSession), so front-end
+ * learners AND dashboard admins can submit feedback without an extra login.
+ */
+const feedbackSubmitProcedure = publicProcedure.use(async ({ ctx, next }) => {
+  const principal = resolvePrincipal(ctx);
+  if (principal.kind === "anonymous") {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "請先登入" });
+  }
+  return next({ ctx: { ...ctx, principal } });
+});
 
 /**
  * Mixed-auth middleware that accepts either platform admins or dashboard admins.
@@ -35,7 +72,7 @@ const feedbackAdminProcedure = publicProcedure.use(async ({ ctx, next }) => {
 });
 
 export const feedbacksRouter = router({
-  submit: protectedProcedure
+  submit: feedbackSubmitProcedure
     .input(
       z.object({
         tutorialId: z.number(),
@@ -51,8 +88,8 @@ export const feedbacksRouter = router({
       const id = await createFeedback({
         tutorialId: input.tutorialId,
         tutorialTitle: input.tutorialTitle,
-        userId: ctx.user.id,
-        userName: ctx.user.name ?? "匿名用户",
+        userId: feedbackUserId(ctx.principal),
+        userName: feedbackUserName(ctx.principal, ctx.user?.name ?? "匿名用户"),
         originalText: input.originalText,
         translatedText: input.translatedText,
         targetLanguage: input.targetLanguage,
@@ -63,10 +100,10 @@ export const feedbacksRouter = router({
       return { id, success: true };
     }),
 
-  myFeedbacks: protectedProcedure
+  myFeedbacks: feedbackSubmitProcedure
     .input(z.object({ tutorialId: z.number().optional() }))
     .query(async ({ input, ctx }) => {
-      return getFeedbacksByUser(ctx.user.id, input.tutorialId);
+      return getFeedbacksByUser(feedbackUserId(ctx.principal), input.tutorialId);
     }),
 
   adminList: feedbackAdminProcedure

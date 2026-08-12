@@ -50,6 +50,11 @@ function LearnViewContent() {
   const t = useT();
   const docId = parseInt(params?.id || "0");
   const { isAuthenticated } = useAuth();
+  const { isAdmin } = useAdminSession();
+
+  // A learner (auth.me) OR a dashboard admin can submit feedback without an
+  // extra login — the feedback form must not gate on the learner identity alone.
+  const canGiveFeedback = isAuthenticated || isAdmin;
 
   // Get lang from URL query
   const urlParams = new URLSearchParams(window.location.search);
@@ -60,7 +65,7 @@ function LearnViewContent() {
   const [showMyFeedbacks, setShowMyFeedbacks] = useState(false);
 
   const { zhColRef, transColRef } = useScrollSync(activeSegmentId);
-  const data = useLearnData(docId, selectedLang, isAuthenticated);
+  const data = useLearnData(docId, selectedLang, canGiveFeedback);
   const {
     doc,
     docLoading,
@@ -82,7 +87,7 @@ function LearnViewContent() {
     docTitle: doc?.title ?? "",
     segments,
     selectedLang,
-    isAuthenticated,
+    isAuthenticated: canGiveFeedback,
     activeSegmentId,
     getTranslatedText,
     refetchMyFeedbacks,
@@ -157,7 +162,7 @@ function LearnViewContent() {
           activeSegmentId={activeSegmentId}
           segments={segments}
           selectedLang={selectedLang}
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={canGiveFeedback}
           isImageLikeSegment={isImageLikeSegment}
           getSourceBlock={getSourceBlock}
           getImageUrlForSegment={getImageUrlForSegment}
