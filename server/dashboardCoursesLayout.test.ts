@@ -34,7 +34,7 @@ describe("DashboardCourses edit dialog layout", () => {
   });
 
   it("separates section titles from form labels", () => {
-    expect(dialogSource).toMatch(/基本信息/);
+    expect(dialogSource).toMatch(/t\("dashboard\.editBasic"\)/);
     expect(dialogSource).toMatch(/className="block[^"]*mb-2/);
   });
 });

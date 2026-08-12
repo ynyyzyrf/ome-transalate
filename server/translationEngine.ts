@@ -112,6 +112,8 @@ Style & tone:
 2. For technical or professional terms, follow the glossary strictly.
 3. Headings must stay short, clear, and parallel in form. Keep numbers, codes, and identifiers exactly as-is.
 4. Lists and tables must keep their format. Do not merge list items or table cells.
+5. Translate ALL quoted text — slogans, catchphrases, and short phrases inside quotation marks — fully into ${targetLangName}. Never leave English phrases untranslated just because they are quoted.
+6. When the source mixes in English loanwords (e.g. "CALL"), translate them into ${targetLangName} too. The output must read as natural ${targetLangName} with no leftover English. Keep unchanged ONLY genuine brand/product names, company names, person names, URLs, email addresses, numbers, codes, and identifiers.
 
 Output format:
 5. Return ONLY a valid JSON object with a "segments" array.
