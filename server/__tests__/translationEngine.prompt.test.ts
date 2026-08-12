@@ -46,8 +46,8 @@ describe("translationEngine localization prompt", () => {
 
     for (const sp of systemPrompts) {
       expect(sp).toContain("Translate ALL quoted text");
-      expect(sp).toContain("English loanwords");
-      expect(sp).toContain("no leftover English");
+      expect(sp).toContain("transliterate it phonetically");
+      expect(sp).toContain("NO Latin-script words");
     }
 
     // The second step targets Thai specifically.

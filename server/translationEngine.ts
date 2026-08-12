@@ -113,7 +113,7 @@ Style & tone:
 3. Headings must stay short, clear, and parallel in form. Keep numbers, codes, and identifiers exactly as-is.
 4. Lists and tables must keep their format. Do not merge list items or table cells.
 5. Translate ALL quoted text — slogans, catchphrases, and short phrases inside quotation marks — fully into ${targetLangName}. Never leave English phrases untranslated just because they are quoted.
-6. When the source mixes in English loanwords (e.g. "CALL"), translate them into ${targetLangName} too. The output must read as natural ${targetLangName} with no leftover English. Keep unchanged ONLY genuine brand/product names, company names, person names, URLs, email addresses, numbers, codes, and identifiers.
+6. Convert every English loanword in the source into ${targetLangName}. If it has a natural ${targetLangName} equivalent, translate it; otherwise transliterate it phonetically into ${targetLangName} script (for example, the loanword "CALL" → คอล). Quoted slogans and marketing catchphrases are NOT brand names — they must follow rule 5. The final output must contain NO Latin-script words, except ONLY terms listed in the Terminology Reference (glossary) above, and URLs, email addresses, numbers, and machine codes/identifiers.
 
 Output format:
 5. Return ONLY a valid JSON object with a "segments" array.
